@@ -35,10 +35,30 @@ type cacheMeta struct {
 // Air-gapped deployments can pre-seed CacheDir with index.html (+ optional
 // meta.json) and disable auto-update.
 func (m *Manager) LoadCache() error {
-	html, err := os.ReadFile(filepath.Join(m.cfg.CacheDir, cacheFileName))
-	if err != nil {
-		return err
+	candidatePaths := []string{
+		filepath.Join(m.cfg.CacheDir, cacheFileName),
+		filepath.Join("..", "gowa-ui-dev", "dist", "index.html"),
+		filepath.Join("gowa-ui-dev", "dist", "index.html"),
+		filepath.Join("..", "dist", "index.html"),
+		filepath.Join("dist", "index.html"),
 	}
+
+	var html []byte
+	var loadedFrom string
+
+	for _, p := range candidatePaths {
+		if data, readErr := os.ReadFile(p); readErr == nil && len(data) > 0 {
+			html = data
+			loadedFrom = p
+			break
+		}
+	}
+
+	if len(html) == 0 {
+		return fmt.Errorf("no index.html found in cache (%s) or build outputs", m.cfg.CacheDir)
+	}
+
+	logrus.Infof("[UI_ASSET] loaded dashboard from %s (%d bytes)", loadedFrom, len(html))
 
 	asset := cachedAsset{html: html, sha256: contentSHA(html)}
 	if metaRaw, metaErr := os.ReadFile(filepath.Join(m.cfg.CacheDir, metaFileName)); metaErr == nil {

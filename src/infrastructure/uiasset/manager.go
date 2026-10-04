@@ -58,6 +58,11 @@ func New(cfg Config) *Manager {
 func (m *Manager) Content() (html []byte, etag string, ok bool) {
 	asset := m.current.Load()
 	if asset == nil || len(asset.html) == 0 {
+		if err := m.LoadCache(); err == nil {
+			asset = m.current.Load()
+		}
+	}
+	if asset == nil || len(asset.html) == 0 {
 		return nil, "", false
 	}
 	return asset.html, asset.sha256, true
