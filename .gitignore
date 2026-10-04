@@ -12,9 +12,13 @@ src/pkged.go
 
 # Database
 *.db
+*.db-shm
+*.db-wal
 storages/*
 !storages/ui/
 !storages/ui/index.html
+!storages/ui/meta.json
+src/storages/
 
 # Environment
 .env
