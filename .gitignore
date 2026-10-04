@@ -2,7 +2,9 @@
 bin/
 main
 main.exe
+*.exe
 src/gowa
+src/gowa.exe
 .claude
 
 # Build artifacts
