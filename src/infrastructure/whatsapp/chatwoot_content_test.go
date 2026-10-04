@@ -1054,7 +1054,7 @@ func TestFormatInteractiveMessageSummary(t *testing.T) {
 				},
 			},
 		}
-		want := "Promo\nConfira nossa oferta\nEquipe Vendas\nðŸ”— Visitar site: https://example.com"
+		want := "Promo\nConfira nossa oferta\nEquipe Vendas\n🔗 Visitar site: https://example.com"
 		if got := utils.FormatInteractiveMessageSummary(im); got != want {
 			t.Fatalf("got %q, want %q", got, want)
 		}
@@ -1073,7 +1073,7 @@ func TestFormatInteractiveMessageSummary(t *testing.T) {
 				},
 			},
 		}
-		want := "ðŸ“ž Ligar agora: +5511999999999"
+		want := "📞 Ligar agora: +5511999999999"
 		if got := utils.FormatInteractiveMessageSummary(im); got != want {
 			t.Fatalf("got %q, want %q", got, want)
 		}
@@ -1081,7 +1081,7 @@ func TestFormatInteractiveMessageSummary(t *testing.T) {
 
 	t.Run("cta_url button missing url falls back to raw name", func(t *testing.T) {
 		// A cta_url button whose JSON has no url is unusable as a link, so it
-		// must not silently print a broken "ðŸ”— Label: " line.
+		// must not silently print a broken "🔗 Label: " line.
 		im := &waE2E.InteractiveMessage{
 			InteractiveMessage: &waE2E.InteractiveMessage_NativeFlowMessage_{
 				NativeFlowMessage: &waE2E.InteractiveMessage_NativeFlowMessage{
@@ -1148,7 +1148,7 @@ func TestFormatInteractiveMessageSummary(t *testing.T) {
 				},
 			},
 		}
-		want := "ðŸ“‹ Copy: SAVE10"
+		want := "📋 Copy: SAVE10"
 		if got := utils.FormatInteractiveMessageSummary(im); got != want {
 			t.Fatalf("got %q, want %q", got, want)
 		}
@@ -1225,7 +1225,7 @@ func TestFormatInteractiveMessageSummary(t *testing.T) {
 				},
 			},
 		}
-		want := "Check our products\nCard 1: Shoes\nðŸ”— Buy: https://example.com/shoes"
+		want := "Check our products\nCard 1: Shoes\n🔗 Buy: https://example.com/shoes"
 		if got := utils.FormatInteractiveMessageSummary(im); got != want {
 			t.Fatalf("got %q, want %q", got, want)
 		}

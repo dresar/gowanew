@@ -12,7 +12,9 @@ src/pkged.go
 
 # Database
 *.db
-storages/
+storages/*
+!storages/ui/
+!storages/ui/index.html
 
 # Environment
 .env

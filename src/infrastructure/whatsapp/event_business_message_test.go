@@ -54,7 +54,7 @@ func TestBuildEventPayloadTemplateCarriesStructuredFieldsAndBody(t *testing.T) {
 	if template.Title != "Order confirmed" || template.TemplateID != "order_confirmed" || len(template.Buttons) != 1 {
 		t.Fatalf("template not kept: %+v", template)
 	}
-	want := "Order confirmed\nHi John, your order #1234 has shipped.\nAcme Store\nðŸ”— Track order: https://acme.example/track/1234"
+	want := "Order confirmed\nHi John, your order #1234 has shipped.\nAcme Store\n🔗 Track order: https://acme.example/track/1234"
 	if payload["body"] != want {
 		t.Fatalf("body = %q, want %q", payload["body"], want)
 	}
@@ -105,7 +105,7 @@ func TestChatwootContentForBusinessMessages(t *testing.T) {
 		{
 			name: "template",
 			msg:  &waE2E.Message{TemplateMessage: businessOrderTemplate()},
-			want: "Order confirmed\nHi John, your order #1234 has shipped.\nAcme Store\nðŸ”— Track order: https://acme.example/track/1234",
+			want: "Order confirmed\nHi John, your order #1234 has shipped.\nAcme Store\n🔗 Track order: https://acme.example/track/1234",
 		},
 		{
 			// The interactive summary skips the markdown pass, so the
@@ -122,7 +122,7 @@ func TestChatwootContentForBusinessMessages(t *testing.T) {
 					}},
 				}},
 			}},
-			want: "Support\nHow can we help?\nAcme Support\nðŸ”— Visit site: https://acme.example/help?utm_source=wa&utm_medium=cta",
+			want: "Support\nHow can we help?\nAcme Support\n🔗 Visit site: https://acme.example/help?utm_source=wa&utm_medium=cta",
 		},
 		{
 			name: "product",
@@ -149,7 +149,7 @@ func TestChatwootContentForBusinessMessages(t *testing.T) {
 						DisplayText: proto.String("Track"), URL: proto.String("https://acme.example/t?utm_source=wa&utm_medium=tpl")}}},
 				},
 			}}},
-			want: "Your order **#1234** has shipped.\nðŸ”— Track: https://acme.example/t?utm_source=wa&utm_medium=tpl",
+			want: "Your order **#1234** has shipped.\n🔗 Track: https://acme.example/t?utm_source=wa&utm_medium=tpl",
 		},
 	}
 
