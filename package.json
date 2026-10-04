@@ -5,6 +5,6 @@
   "description": "Go WhatsApp API Gateway with Glassmorphic Web UI",
   "scripts": {
     "start": "cd src && go run -tags purego . rest",
-    "build": "npm --prefix gowa-ui-dev run build && node -e \"const fs=require('fs'); fs.mkdirSync('src/storages/ui',{recursive:true}); fs.copyFileSync('gowa-ui-dev/dist/index.html','src/storages/ui/index.html'); console.log('UI pre-seeded to src/storages/ui/index.html');\""
+    "build": "npm --prefix ../golangwaui run build && node -e \"const fs=require('fs'); fs.mkdirSync('storages/ui',{recursive:true}); fs.copyFileSync('../golangwaui/dist/index.html','storages/ui/index.html'); console.log('UI pre-seeded to storages/ui/index.html');\""
   }
 }
