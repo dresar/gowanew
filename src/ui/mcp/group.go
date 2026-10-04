@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	domainGroup "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/group"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	domainGroup "github.com/dresar/gowanew/domains/group"
+	"github.com/dresar/gowanew/pkg/utils"
 	mcpg "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"go.mau.fi/whatsmeow"

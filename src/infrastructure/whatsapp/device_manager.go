@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	domainDevice "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/device"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatwoot"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	domainDevice "github.com/dresar/gowanew/domains/device"
+	"github.com/dresar/gowanew/infrastructure/chatwoot"
 	fiberUtils "github.com/gofiber/utils/v2"
 	"github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow"
@@ -260,9 +260,9 @@ func (m *DeviceManager) RemoveDevice(id string) {
 // deleteStoreRowsForJID removes the whatsmeow device rows (primary + keys containers)
 // matching the given identity. A full AD JID (number:NN@s.whatsapp.net) deletes exactly
 // that companion session; a bare-number JID (legacy slots that never stored the AD
-// form) deletes only when it matches a single row — several sibling companion rows for
+// form) deletes only when it matches a single row â€” several sibling companion rows for
 // one number are ambiguous, and deleting here could kill another slot's live session
-// (issue #760). It is idempotent — a row that is already gone is simply not found —
+// (issue #760). It is idempotent â€” a row that is already gone is simply not found â€”
 // and an empty jid is a no-op (a slot that was never paired has no store rows).
 func (m *DeviceManager) deleteStoreRowsForJID(ctx context.Context, jid string) error {
 	if strings.TrimSpace(jid) == "" {
@@ -353,9 +353,9 @@ func (m *DeviceManager) PurgeDevice(ctx context.Context, deviceID string) error 
 		cli.Disconnect()
 	}
 
-	// Delete chatstorage data for this device (local cleanup — surfaced on failure).
+	// Delete chatstorage data for this device (local cleanup â€” surfaced on failure).
 	// Chats/messages are partitioned by the WhatsApp JID once paired, while the
-	// registry slot keeps its own id — purge both keys when they differ.
+	// registry slot keeps its own id â€” purge both keys when they differ.
 	if m.storage != nil {
 		partitionKeys := []string{resolvedID}
 		if jidKey := strings.TrimSpace(inst.JID()); jidKey != "" && jidKey != resolvedID {
@@ -402,7 +402,7 @@ func (m *DeviceManager) PurgeDevice(ctx context.Context, deviceID string) error 
 		}
 	}
 
-	// Delete whatsmeow store/keys rows by JID (local cleanup — surfaced on failure).
+	// Delete whatsmeow store/keys rows by JID (local cleanup â€” surfaced on failure).
 	recordErr(m.deleteStoreRowsForJID(ctx, jid))
 
 	// Keep the registry entry when local cleanup failed so DELETE can be retried.
@@ -448,15 +448,15 @@ func (m *DeviceManager) LogoutDeviceKeepSlot(ctx context.Context, deviceID strin
 // logout and the remote LoggedOut callbacks. It deletes the device's whatsmeow store
 // rows (by JID, resolved before the reset clears it) and resets the in-memory client +
 // persisted JID, keeping the slot (id + display name) for re-pairing. It does NOT call
-// cli.Logout — explicit logout handles the unlink before delegating here, and a remote
+// cli.Logout â€” explicit logout handles the unlink before delegating here, and a remote
 // LoggedOut has already been unlinked on the phone.
 func (m *DeviceManager) keepSlotLogout(ctx context.Context, deviceID string) error {
 	inst, ok := m.GetDevice(deviceID)
 	if !ok || inst == nil {
 		// The remote-logout callback can hold a stale id: InitWaCLI keys its instance by
 		// the AD JID string, but loadFromRegistry may replace it with a registry slot
-		// keyed by uuid. Fall back to JID resolution — exact AD JID first so siblings on
-		// the same number stay distinct, then the bare number for legacy slots — so the
+		// keyed by uuid. Fall back to JID resolution â€” exact AD JID first so siblings on
+		// the same number stay distinct, then the bare number for legacy slots â€” so the
 		// cleanup still lands on the surviving slot instead of leaving a stale JID and
 		// an orphan keys-container row.
 		if parsed, err := types.ParseJID(deviceID); err == nil && parsed.User != "" {
@@ -629,7 +629,7 @@ func (m *DeviceManager) LoadExistingDevices(ctx context.Context) error {
 
 		// Legacy slot that only stored the bare number: backfill the companion identity
 		// from the store row. When a number has several rows and no recorded AD JIDs the
-		// first row wins — that ambiguity predates the ad_jid column.
+		// first row wins â€” that ambiguity predates the ad_jid column.
 		if legacyMatch != nil {
 			logrus.Infof("[DEVICE_MANAGER] backfilling companion %s for device %s", adJID, legacyMatch.ID())
 			m.applyStoreJID(legacyMatch, *dev.ID)
@@ -638,7 +638,7 @@ func (m *DeviceManager) LoadExistingDevices(ctx context.Context) error {
 		}
 
 		// Another slot already claims this number with a different companion: leave the
-		// row alone instead of adopting it — dialing it would churn against a dead or
+		// row alone instead of adopting it â€” dialing it would churn against a dead or
 		// sibling session (issue #760).
 		if numberClaimed {
 			logrus.Warnf("[DEVICE_MANAGER] leaving unreferenced companion session %s alone: number already claimed by another slot", adJID)
@@ -695,7 +695,7 @@ func (m *DeviceManager) persistInstanceRecord(inst *DeviceInstance) {
 // loadFromRegistry loads devices from the registry. Boot reconciliation never deletes
 // registry records: two slots may legitimately share a phone number as distinct
 // companion sessions (issue #760), and even a genuinely stale record is only skipped
-// here — deletion belongs to explicit remove/purge.
+// here â€” deletion belongs to explicit remove/purge.
 func (m *DeviceManager) loadFromRegistry(records []*domainChatStorage.DeviceRecord) {
 	// Collect JIDs from manual devices (device_id doesn't contain @)
 	manualDeviceJIDs := make(map[string]bool)
@@ -945,7 +945,7 @@ func (m *DeviceManager) getOrCreateStoreDevice(ctx context.Context, deviceID str
 			if dev == nil || dev.ID == nil {
 				continue
 			}
-			// Never hand a slot a companion session that a sibling slot already claims —
+			// Never hand a slot a companion session that a sibling slot already claims â€”
 			// that is a session hijack (issue #760). Fall through to a fresh device so
 			// the slot can be re-paired instead.
 			if m.companionClaimedByOther(deviceID, dev.ID.String()) {
@@ -1011,7 +1011,7 @@ func findStoreDeviceByJID(ctx context.Context, container *sqlstore.Container, ji
 	}
 
 	// Bare-number lookup (legacy slots that never stored the AD JID): resolve only
-	// when it is unambiguous. Several companion rows for one number → never guess.
+	// when it is unambiguous. Several companion rows for one number â†’ never guess.
 	var matches []*store.Device
 	targetJID := jid.ToNonAD().String()
 	for _, dev := range devices {

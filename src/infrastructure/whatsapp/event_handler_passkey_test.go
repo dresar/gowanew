@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/ui/websocket"
+	"github.com/dresar/gowanew/ui/websocket"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 )

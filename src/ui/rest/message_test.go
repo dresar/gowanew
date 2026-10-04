@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainMessage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/message"
+	"github.com/dresar/gowanew/config"
+	domainMessage "github.com/dresar/gowanew/domains/message"
 	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

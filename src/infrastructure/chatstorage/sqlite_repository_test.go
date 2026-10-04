@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/sqlite"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	"github.com/dresar/gowanew/pkg/sqlite"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
@@ -471,7 +471,7 @@ func TestSQLiteRepositoryGetOldestMessageByDevice(t *testing.T) {
 		{ID: "msg-newest", ChatJID: chatJID, DeviceID: deviceID, Sender: "628999999999@s.whatsapp.net", Content: "newest", Timestamp: base.Add(2 * time.Hour)},
 		{ID: "msg-oldest", ChatJID: chatJID, DeviceID: deviceID, Sender: "628999999999@s.whatsapp.net", Content: "oldest", Timestamp: base},
 		{ID: "msg-middle", ChatJID: chatJID, DeviceID: deviceID, Sender: "628999999999@s.whatsapp.net", Content: "middle", Timestamp: base.Add(1 * time.Hour)},
-		// Older timestamp but a different device — must not be selected.
+		// Older timestamp but a different device â€” must not be selected.
 		{ID: "msg-other-device", ChatJID: chatJID, DeviceID: otherDeviceID, Sender: "628999999999@s.whatsapp.net", Content: "other device", Timestamp: base.Add(-1 * time.Hour)},
 	}
 	if err := repo.StoreMessagesBatch(messages); err != nil {

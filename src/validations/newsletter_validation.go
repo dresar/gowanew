@@ -6,9 +6,9 @@ import (
 	"math"
 	"strings"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainNewsletter "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/newsletter"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
+	"github.com/dresar/gowanew/config"
+	domainNewsletter "github.com/dresar/gowanew/domains/newsletter"
+	pkgError "github.com/dresar/gowanew/pkg/error"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 

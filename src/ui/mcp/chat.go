@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	domainChat "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chat"
-	domainUser "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/user"
+	domainChat "github.com/dresar/gowanew/domains/chat"
+	domainUser "github.com/dresar/gowanew/domains/user"
 	mcpg "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )

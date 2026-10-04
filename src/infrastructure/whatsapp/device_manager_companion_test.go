@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 	"go.mau.fi/whatsmeow/types"
 )
 
@@ -304,7 +304,7 @@ func TestKeepSlotLogout_DeletesOnlyOwnCompanionRow(t *testing.T) {
 }
 
 // loadFromRegistry must keep two slots that share a phone number when their AD JIDs
-// identify distinct companions — deleting one is data loss.
+// identify distinct companions â€” deleting one is data loss.
 func TestLoadFromRegistry_KeepsSiblingSlotsOnSameNumber(t *testing.T) {
 	adA := types.NewADJID("6281777000008", types.WhatsAppDomain, 28)
 	adB := types.NewADJID("6281777000008", types.WhatsAppDomain, 32)
@@ -415,7 +415,7 @@ func TestLoadExistingDevices_BackfillsADJIDForLegacySlot(t *testing.T) {
 }
 
 // LoadExistingDevices must not adopt sibling companion rows of a number that is
-// already claimed by a slot — those orphans are left for explicit cleanup, so the
+// already claimed by a slot â€” those orphans are left for explicit cleanup, so the
 // auto-connect loop cannot dial dead sessions of a live number.
 func TestLoadExistingDevices_DoesNotAdoptSiblingCompanionRows(t *testing.T) {
 	ctx := context.Background()

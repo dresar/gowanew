@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 )
 
 func TestSQLiteRepositoryStoresAndLooksUpChatwootMessageLinks(t *testing.T) {
@@ -247,7 +247,7 @@ func TestSQLiteRepositoryConversationLookupExcludesLegacyZeroInPerDeviceMode(t *
 
 	// A pre-migration legacy link (account id 0) for conversation 9. Chatwoot
 	// numbers conversations per account, so account 7 can also have a conversation
-	// 9 — the legacy row must not be allowed to satisfy that account's reply.
+	// 9 â€” the legacy row must not be allowed to satisfy that account's reply.
 	legacy := &domainChatStorage.ChatwootMessageLink{
 		DeviceID:               "legacy-dev",
 		WhatsAppMessageID:      "legacy-1",

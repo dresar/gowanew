@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
+	"github.com/dresar/gowanew/config"
 )
 
 // reopenCounters tallies the calls FindOrCreateConversation makes against the
@@ -56,7 +56,7 @@ func reopenServer(t *testing.T, listPayload []map[string]any, toggleOK bool, cre
 
 func TestFindOrCreateConversation_ReopenReturnsOpenWithoutReopening(t *testing.T) {
 	// (a) When an OPEN conversation exists, it is returned immediately: no
-	// create, no toggle — even with reopen enabled. There is nothing to
+	// create, no toggle â€” even with reopen enabled. There is nothing to
 	// resurrect.
 	origReopen := config.ChatwootReopenConversation
 	config.ChatwootReopenConversation = true
@@ -187,7 +187,7 @@ func TestFindOrCreateConversation_ReopenNoConversationFallsThroughToCreate(t *te
 
 func TestFindOrCreateConversation_ReopenDisabledSkipsLatestAndToggles(t *testing.T) {
 	// (d) reopen=false: even though a resolved conversation exists for the
-	// contact, the reopen branch is skipped entirely — latest selection is
+	// contact, the reopen branch is skipped entirely â€” latest selection is
 	// never consulted and no toggle happens. With no OPEN conversation found,
 	// the method goes straight to creating a new one.
 	origReopen := config.ChatwootReopenConversation

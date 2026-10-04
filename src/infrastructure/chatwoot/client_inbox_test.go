@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
+	"github.com/dresar/gowanew/config"
 )
 
 // --- ListInboxes -----------------------------------------------------------
@@ -51,7 +51,7 @@ func TestListInboxes_DecodesPayload(t *testing.T) {
 }
 
 func TestListInboxes_EmptyPayload(t *testing.T) {
-	// An account with no inboxes decodes to an empty slice, not an error —
+	// An account with no inboxes decodes to an empty slice, not an error â€”
 	// provisioning treats this as "no match, create one".
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(t, w, http.StatusOK, map[string]any{"payload": []Inbox{}})
@@ -217,7 +217,7 @@ func TestCreateInbox_Non2xx(t *testing.T) {
 
 func TestCreateInbox_ZeroIDOrUndecodable(t *testing.T) {
 	// A 2xx whose body yields no valid (non-zero) ID in either shape is a plain
-	// error (not HTTPStatusError) — there is nothing usable to provision with.
+	// error (not HTTPStatusError) â€” there is nothing usable to provision with.
 	tests := []struct {
 		name string
 		body string
@@ -253,7 +253,7 @@ func TestCreateInbox_ZeroIDOrUndecodable(t *testing.T) {
 
 func TestSelectLatestConversation_ReturnsHighestIDRegardlessOfStatus(t *testing.T) {
 	// Returns the highest-id conversation in this inbox EVEN IF it is resolved
-	// — that is the conversation the reopen path resurrects. A higher-id
+	// â€” that is the conversation the reopen path resurrects. A higher-id
 	// conversation in a different inbox must be skipped so we never resurrect
 	// the wrong thread, and a lower-id open conversation in the right inbox
 	// must lose to the higher-id resolved one.
@@ -397,7 +397,7 @@ func TestCreateMessage_OptionsJSONPath(t *testing.T) {
 	// On the no-attachment JSON path, opts populate source_id and
 	// content_attributes. source_id stamps the WAID anchor; content_attributes
 	// carries reply metadata. Both have ,omitempty, so the zero options must
-	// emit NEITHER key — that reproduces the pre-options behavior exactly.
+	// emit NEITHER key â€” that reproduces the pre-options behavior exactly.
 	tests := []struct {
 		name              string
 		opts              MessageOptions

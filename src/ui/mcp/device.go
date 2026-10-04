@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
 	mcpg "github.com/mark3labs/mcp-go/mcp"
 )
 

@@ -10,22 +10,22 @@ import (
 
 	"go.mau.fi/whatsmeow/store/sqlstore"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainApp "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/app"
-	domainCall "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/call"
-	domainChat "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chat"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	domainDevice "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/device"
-	domainGroup "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/group"
-	domainMessage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/message"
-	domainNewsletter "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/newsletter"
-	domainSend "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/send"
-	domainUser "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/user"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/sqlite"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/usecase"
+	"github.com/dresar/gowanew/config"
+	domainApp "github.com/dresar/gowanew/domains/app"
+	domainCall "github.com/dresar/gowanew/domains/call"
+	domainChat "github.com/dresar/gowanew/domains/chat"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	domainDevice "github.com/dresar/gowanew/domains/device"
+	domainGroup "github.com/dresar/gowanew/domains/group"
+	domainMessage "github.com/dresar/gowanew/domains/message"
+	domainNewsletter "github.com/dresar/gowanew/domains/newsletter"
+	domainSend "github.com/dresar/gowanew/domains/send"
+	domainUser "github.com/dresar/gowanew/domains/user"
+	"github.com/dresar/gowanew/infrastructure/chatstorage"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	"github.com/dresar/gowanew/pkg/sqlite"
+	"github.com/dresar/gowanew/pkg/utils"
+	"github.com/dresar/gowanew/usecase"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -58,7 +58,7 @@ var (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Short: "Send free whatsapp API",
-	Long: `This application is from clone https://github.com/aldinokemal/go-whatsapp-web-multidevice, 
+	Long: `This application is from clone https://github.com/dresar/gowanew, 
 you can send whatsapp over http api but your whatsapp account have to be multi device version`,
 }
 

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatwoot"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	"github.com/dresar/gowanew/infrastructure/chatwoot"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -76,7 +76,7 @@ func TestComposeOutgoingText(t *testing.T) {
 	}{
 		{
 			// Core reason this function exists: GFM/Chatwoot markdown is
-			// rewritten to WhatsApp's syntax before delivery — bold (**bold**->
+			// rewritten to WhatsApp's syntax before delivery â€” bold (**bold**->
 			// *bold*), italic (*it*->_it_), and strike (~~s~~->~s~) all translate.
 			name:      "markdown translated chatwoot to whatsapp",
 			signMsg:   false,
@@ -96,7 +96,7 @@ func TestComposeOutgoingText(t *testing.T) {
 		},
 		{
 			// Sign disabled: never attach a signature, even when the agent name
-			// is present — the body must pass through (markdown-translated) only.
+			// is present â€” the body must pass through (markdown-translated) only.
 			name:      "sign disabled ignores sender name",
 			signMsg:   false,
 			delimiter: "\n\n",

@@ -3,10 +3,10 @@ package rest
 import (
 	"fmt"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/domains/device"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	"github.com/dresar/gowanew/config"
+	"github.com/dresar/gowanew/domains/chatstorage"
+	"github.com/dresar/gowanew/domains/device"
+	"github.com/dresar/gowanew/pkg/utils"
 	"github.com/gofiber/fiber/v3"
 )
 

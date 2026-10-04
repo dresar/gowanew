@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	domainSend "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/send"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/ui/rest/middleware"
+	domainSend "github.com/dresar/gowanew/domains/send"
+	"github.com/dresar/gowanew/ui/rest/middleware"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -38,7 +38,7 @@ func newSendFileTestApp(stub *sendFileStubUsecase) *fiber.App {
 }
 
 // TestSendFileJSONBodyWithFileURLDoesNotPanic is a regression test for
-// https://github.com/aldinokemal/go-whatsapp-web-multidevice/issues/744:
+// https://github.com/dresar/gowanew/issues/744:
 // a JSON request carrying file_url (no multipart file part) must reach the
 // usecase instead of panicking into a 500 from the unguarded FormFile error.
 func TestSendFileJSONBodyWithFileURLDoesNotPanic(t *testing.T) {

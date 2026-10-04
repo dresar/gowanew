@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	domainSend "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/send"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/sqlite"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	domainSend "github.com/dresar/gowanew/domains/send"
+	"github.com/dresar/gowanew/infrastructure/chatstorage"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	pkgError "github.com/dresar/gowanew/pkg/error"
+	"github.com/dresar/gowanew/pkg/sqlite"
 	"github.com/stretchr/testify/require"
 )
 

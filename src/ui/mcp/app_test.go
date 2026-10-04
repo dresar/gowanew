@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	domainApp "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/app"
+	domainApp "github.com/dresar/gowanew/domains/app"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

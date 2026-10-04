@@ -18,15 +18,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/domains/app"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	domainSend "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/send"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/ui/rest/helpers"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/validations"
+	"github.com/dresar/gowanew/config"
+	"github.com/dresar/gowanew/domains/app"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	domainSend "github.com/dresar/gowanew/domains/send"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	pkgError "github.com/dresar/gowanew/pkg/error"
+	"github.com/dresar/gowanew/pkg/utils"
+	"github.com/dresar/gowanew/ui/rest/helpers"
+	"github.com/dresar/gowanew/validations"
 	"github.com/disintegration/imaging"
 	fiberUtils "github.com/gofiber/utils/v2"
 	"github.com/sirupsen/logrus"
@@ -213,7 +213,7 @@ func (service serviceSend) wrapSendMessage(ctx context.Context, client *whatsmeo
 	// Store message asynchronously with timeout.
 	// Preserve device context (for device_id scoping) but detach from request cancellation.
 	// The budget must survive chat-storage write contention (history sync batches
-	// hold the SQLite writer for a while; busy_timeout is 30s) — with a short
+	// hold the SQLite writer for a while; busy_timeout is 30s) â€” with a short
 	// deadline the sent message is silently missing from the chat viewer.
 	go func() {
 		storeCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 15*time.Second)
@@ -242,7 +242,7 @@ func (service serviceSend) wrapSendMessage(ctx context.Context, client *whatsmeo
 // RevokeMessage, which parses and LID-normalises a stored sender for the same
 // reason. A value that will not parse is passed through untouched.
 func normalizeStoredSender(ctx context.Context, sender string) string {
-	// ParseJID does not report failure on a malformed value — it appends the
+	// ParseJID does not report failure on a malformed value â€” it appends the
 	// default server, so "not-a-jid" becomes "not-a-jid@s.whatsapp.net". Only
 	// touch a value that already carries one, so anything else survives verbatim
 	// instead of being rewritten into a different unusable form.
@@ -525,7 +525,7 @@ func (service serviceSend) SendImage(ctx context.Context, request domainSend.Ima
 	msg.ImageMessage.ContextInfo = service.mergeReplyContext(ctx, msg.ImageMessage.ContextInfo, request.ReplyMessageID)
 	msg.ImageMessage.ContextInfo = withAllowReshare(msg.ImageMessage.ContextInfo, request.AllowReshare)
 
-	caption := "🖼️ Image"
+	caption := "ðŸ–¼ï¸ Image"
 	if request.Caption != "" {
 		caption = request.Caption
 	}
@@ -623,9 +623,9 @@ func (service serviceSend) SendFile(ctx context.Context, request domainSend.File
 	}
 	msg.DocumentMessage.ContextInfo = service.mergeReplyContext(ctx, msg.DocumentMessage.ContextInfo, request.ReplyMessageID)
 
-	caption := "📄 Document"
+	caption := "ðŸ“„ Document"
 	if fileName != "" {
-		caption = "📄 " + fileName
+		caption = "ðŸ“„ " + fileName
 	}
 	if request.Caption != "" {
 		caption = request.Caption
@@ -675,7 +675,7 @@ func generatePDFThumbnail(pdfBytes []byte, uuid string) []byte {
 		return nil
 	}
 
-	// Try pdftoppm first (poppler-utils) — widely available, no Ghostscript needed
+	// Try pdftoppm first (poppler-utils) â€” widely available, no Ghostscript needed
 	pngGenerated := false
 	pdftoppmOut := fmt.Sprintf("%s/thumb_%s", config.PathSendItems, uuid)
 	cmdCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -1084,9 +1084,9 @@ func (service serviceSend) SendVideo(ctx context.Context, request domainSend.Vid
 	msg.VideoMessage.ContextInfo = service.mergeReplyContext(ctx, msg.VideoMessage.ContextInfo, request.ReplyMessageID)
 	msg.VideoMessage.ContextInfo = withAllowReshare(msg.VideoMessage.ContextInfo, request.AllowReshare)
 
-	caption := "🎥 Video"
+	caption := "ðŸŽ¥ Video"
 	if request.Caption != "" {
-		caption = "🎥 " + request.Caption
+		caption = "ðŸŽ¥ " + request.Caption
 	}
 	ts, err := service.wrapSendMessage(ctx, client, dataWaRecipient, msg, caption)
 	if err != nil {
@@ -1137,9 +1137,9 @@ func (service serviceSend) SendContact(ctx context.Context, request domainSend.C
 		msg.ContactMessage.ContextInfo.Expiration = proto.Uint32(uint32(*request.BaseRequest.Duration))
 	}
 
-	content := "👤 " + contactName
+	content := "ðŸ‘¤ " + contactName
 	if contactPhone != "" {
-		content = fmt.Sprintf("👤 %s (+%s)", contactName, contactPhone)
+		content = fmt.Sprintf("ðŸ‘¤ %s (+%s)", contactName, contactPhone)
 	}
 
 	ts, err := service.wrapSendMessage(ctx, client, dataWaRecipient, msg, content)
@@ -1293,7 +1293,7 @@ func (service serviceSend) SendLocation(ctx context.Context, request domainSend.
 		msg.LocationMessage.ContextInfo.Expiration = proto.Uint32(uint32(*request.BaseRequest.Duration))
 	}
 
-	content := "📍 " + request.Latitude + ", " + request.Longitude
+	content := "ðŸ“ " + request.Latitude + ", " + request.Longitude
 
 	// Send WhatsApp Message Proto
 	ts, err := service.wrapSendMessage(ctx, client, dataWaRecipient, msg, content)
@@ -1502,7 +1502,7 @@ func (service serviceSend) SendAudio(ctx context.Context, request domainSend.Aud
 	}
 	msg.AudioMessage.ContextInfo = service.mergeReplyContext(ctx, msg.AudioMessage.ContextInfo, request.ReplyMessageID)
 
-	content := "🎵 Audio"
+	content := "ðŸŽµ Audio"
 
 	ts, err := service.wrapSendMessage(ctx, client, dataWaRecipient, msg, content)
 	if err != nil {
@@ -1530,7 +1530,7 @@ func (service serviceSend) SendPoll(ctx context.Context, request domainSend.Poll
 		return response, err
 	}
 
-	content := "📊 " + request.Question
+	content := "ðŸ“Š " + request.Question
 
 	msg := client.BuildPollCreation(request.Question, request.Options, request.MaxAnswer)
 
@@ -1850,7 +1850,7 @@ func (service serviceSend) SendSticker(ctx context.Context, request domainSend.S
 			msg.StickerMessage.ContextInfo.Expiration = proto.Uint32(uint32(*request.BaseRequest.Duration))
 		}
 
-		content := "🎨 Animated Sticker"
+		content := "ðŸŽ¨ Animated Sticker"
 
 		// Send the animated sticker message
 		ts, err := service.wrapSendMessage(ctx, client, dataWaRecipient, msg, content)
@@ -2014,7 +2014,7 @@ func (service serviceSend) SendSticker(ctx context.Context, request domainSend.S
 		msg.StickerMessage.ContextInfo.Expiration = proto.Uint32(uint32(*request.BaseRequest.Duration))
 	}
 
-	content := "🎨 Sticker"
+	content := "ðŸŽ¨ Sticker"
 
 	// Send the sticker message
 	ts, err := service.wrapSendMessage(ctx, client, dataWaRecipient, msg, content)

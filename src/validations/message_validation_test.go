@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	domainMessage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/message"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
+	domainMessage "github.com/dresar/gowanew/domains/message"
+	pkgError "github.com/dresar/gowanew/pkg/error"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -81,7 +81,7 @@ func TestValidateReactMessage(t *testing.T) {
 			args: args{request: domainMessage.ReactionRequest{
 				Phone:     "6281234567890@s.whatsapp.net",
 				MessageID: "3EB0789ABC123456",
-				Emoji:     "👍",
+				Emoji:     "ðŸ‘",
 			}},
 			err: nil,
 		},
@@ -90,7 +90,7 @@ func TestValidateReactMessage(t *testing.T) {
 			args: args{request: domainMessage.ReactionRequest{
 				Phone:     "6281234567890@s.whatsapp.net",
 				MessageID: "3EB0789ABC123456",
-				Emoji:     "❤️",
+				Emoji:     "â¤ï¸",
 			}},
 			err: nil,
 		},
@@ -99,7 +99,7 @@ func TestValidateReactMessage(t *testing.T) {
 			args: args{request: domainMessage.ReactionRequest{
 				Phone:     "6281234567890@s.whatsapp.net",
 				MessageID: "3EB0789ABC123456",
-				Emoji:     "😊",
+				Emoji:     "ðŸ˜Š",
 			}},
 			err: nil,
 		},
@@ -108,7 +108,7 @@ func TestValidateReactMessage(t *testing.T) {
 			args: args{request: domainMessage.ReactionRequest{
 				Phone:     "",
 				MessageID: "3EB0789ABC123456",
-				Emoji:     "👍",
+				Emoji:     "ðŸ‘",
 			}},
 			err: pkgError.ValidationError("phone: cannot be blank."),
 		},
@@ -117,7 +117,7 @@ func TestValidateReactMessage(t *testing.T) {
 			args: args{request: domainMessage.ReactionRequest{
 				Phone:     "6281234567890@s.whatsapp.net",
 				MessageID: "",
-				Emoji:     "👍",
+				Emoji:     "ðŸ‘",
 			}},
 			err: pkgError.ValidationError("message_id: cannot be blank."),
 		},

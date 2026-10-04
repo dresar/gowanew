@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
+	"github.com/dresar/gowanew/config"
 )
 
 // TestTriggerAutoSync_NoopWhenGated verifies the connect-path entrypoint is a
@@ -32,7 +32,7 @@ func TestTriggerAutoSync_NoopWhenGated(t *testing.T) {
 	TriggerAutoSync(nil, nil)
 
 	// Enabled + import on, but no logged-in client (nil) means no storage JID
-	// is available yet — must return without panicking or launching a sync.
+	// is available yet â€” must return without panicking or launching a sync.
 	config.ChatwootImportMessages = true
 	TriggerAutoSync(nil, nil)
 }
@@ -247,7 +247,7 @@ func TestRetryable(t *testing.T) {
 }
 
 func TestRetrySyncOp_DoesNotRetry4xx(t *testing.T) {
-	// 4xx is a validation/auth error — hitting it 3 times would waste
+	// 4xx is a validation/auth error â€” hitting it 3 times would waste
 	// backoff time and spam Chatwoot.
 	attempts := 0
 	err := retrySyncOp(context.Background(), 3, func() error {

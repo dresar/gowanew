@@ -10,13 +10,13 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	domainMessage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/message"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/validations"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	domainMessage "github.com/dresar/gowanew/domains/message"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	pkgError "github.com/dresar/gowanew/pkg/error"
+	"github.com/dresar/gowanew/pkg/utils"
+	"github.com/dresar/gowanew/validations"
 	"github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/appstate"
@@ -268,7 +268,7 @@ func (service serviceMessage) ReactMessage(ctx context.Context, request domainMe
 
 	// Determine the sender of the original message for BuildReaction.
 	// BuildReaction uses BuildMessageKey internally, which correctly sets the
-	// Participant field for group chats — required by the WhatsApp protocol.
+	// Participant field for group chats â€” required by the WhatsApp protocol.
 	// An empty JID means "message was from me".
 	senderJID := types.EmptyJID
 	message, err := service.chatStorageRepo.GetMessageByID(request.MessageID)
@@ -276,7 +276,7 @@ func (service serviceMessage) ReactMessage(ctx context.Context, request domainMe
 		logrus.Warnf("Failed to lookup message %s for reaction: %v, using heuristic", request.MessageID, err)
 		if len(request.MessageID) > 22 {
 			if dataWaRecipient.Server == types.GroupServer {
-				logrus.Warnf("Cannot determine original sender for group reaction to %s — reaction may not be delivered", request.MessageID)
+				logrus.Warnf("Cannot determine original sender for group reaction to %s â€” reaction may not be delivered", request.MessageID)
 			}
 		}
 	} else if message != nil {
@@ -400,7 +400,7 @@ func (service serviceMessage) DeleteMessage(ctx context.Context, request domainM
 // An edit that ARRIVES from another device is already applied: CreateMessage
 // spots the MESSAGE_EDIT protocol message and calls storeEditedMessage. An edit
 // we send ourselves is never echoed back to us, so nothing applied it, and the
-// stored copy keeps the text as first sent — indefinitely.
+// stored copy keeps the text as first sent â€” indefinitely.
 //
 // That matters beyond the chat viewer, because mergeReplyContext builds a
 // reply's quoted context from the stored copy. Quoting a message that was edited
@@ -541,7 +541,7 @@ func linkStartsAtBoundary(text string, start int) bool {
 	if unicode.IsSpace(r) {
 		return true
 	}
-	before := strings.TrimRight(prefix, "([{<\"'“‘")
+	before := strings.TrimRight(prefix, "([{<\"'â€œâ€˜")
 	if before == prefix {
 		// Directly attached to other text (e.g. "?u=" in a query string).
 		return false
@@ -562,7 +562,7 @@ func lastRune(s string) rune {
 }
 
 func linkEndsAtBoundary(text string, end int) bool {
-	rest := strings.TrimLeft(text[end:], ".,;:!?)]}>\"'”’")
+	rest := strings.TrimLeft(text[end:], ".,;:!?)]}>\"'â€â€™")
 	if rest == "" {
 		return true
 	}

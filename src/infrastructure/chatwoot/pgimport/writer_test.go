@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 )
 
 // insertMessageTestCase exercises insertMessage end-to-end against sqlmock,
@@ -21,8 +21,8 @@ type insertMessageTestCase struct {
 	agentUserType  string
 	agentUserID    int64
 	msg            *domainChatStorage.Message
-	wantSenderType any // string or nil — nil means SQL NULL
-	wantSenderID   any // int64 or nil — nil means SQL NULL
+	wantSenderType any // string or nil â€” nil means SQL NULL
+	wantSenderID   any // int64 or nil â€” nil means SQL NULL
 }
 
 func TestInsertMessage_SenderResolution(t *testing.T) {

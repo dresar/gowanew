@@ -22,9 +22,9 @@ import (
 	"go.mau.fi/whatsmeow/types/events"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	pkgError "github.com/dresar/gowanew/pkg/error"
 	"go.mau.fi/whatsmeow"
 )
 
@@ -132,7 +132,7 @@ func FormatLocationSummary(name, address string, lat, long float64) string {
 	}
 	mapsLink := fmt.Sprintf("https://maps.google.com/?q=%g,%g", lat, long)
 	parts = append(parts, mapsLink)
-	return strings.Join(parts, " — ")
+	return strings.Join(parts, " â€” ")
 }
 
 // FormatContactSummary builds a one-liner for a shared contact card.

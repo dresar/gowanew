@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	domainChat "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chat"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	domainChat "github.com/dresar/gowanew/domains/chat"
+	"github.com/dresar/gowanew/pkg/utils"
 	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/require"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	domainGroup "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/group"
+	domainGroup "github.com/dresar/gowanew/domains/group"
 	mcpg "github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

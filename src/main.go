@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/cmd"
+	"github.com/dresar/gowanew/cmd"
 )
 
 func main() {

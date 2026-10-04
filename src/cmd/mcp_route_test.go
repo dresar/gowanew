@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	uimcp "github.com/aldinokemal/go-whatsapp-web-multidevice/ui/mcp"
+	uimcp "github.com/dresar/gowanew/ui/mcp"
 	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -119,7 +119,7 @@ func TestMcpEndpointGetDoesNotHang(t *testing.T) {
 // validator before the handler runs. The test app wires uimcp.Deps{} with a
 // nil DeviceManager and nil usecases, so the handler itself would fail on
 // device resolution first ("device identification required...") rather than
-// panic — that generic tool error would make an isError:true assertion pass
+// panic â€” that generic tool error would make an isError:true assertion pass
 // whether or not validation ran. So this test asserts on the actual
 // validator error text ("input schema validation failed"), which can only
 // appear if WithInputSchemaValidation rejected the call before the handler

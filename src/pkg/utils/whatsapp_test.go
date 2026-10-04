@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"google.golang.org/protobuf/proto"
 )
@@ -471,7 +471,7 @@ func TestFormatLocationSummary(t *testing.T) {
 			address: "Gambir, Jakarta",
 			lat:     -6.175392,
 			long:    106.827153,
-			want:    "Monas — Gambir, Jakarta — https://maps.google.com/?q=-6.175392,106.827153",
+			want:    "Monas â€” Gambir, Jakarta â€” https://maps.google.com/?q=-6.175392,106.827153",
 		},
 		{
 			name:    "NameOnly",
@@ -479,7 +479,7 @@ func TestFormatLocationSummary(t *testing.T) {
 			address: "",
 			lat:     -6.2,
 			long:    106.8,
-			want:    "Monas — https://maps.google.com/?q=-6.2,106.8",
+			want:    "Monas â€” https://maps.google.com/?q=-6.2,106.8",
 		},
 		{
 			name:    "CoordinatesOnly",
@@ -525,7 +525,7 @@ func TestExtractMessageTextFromProtoLocationMessages(t *testing.T) {
 					DegreesLongitude: proto.Float64(106.8),
 				},
 			},
-			want: "Monas — Gambir, Jakarta — https://maps.google.com/?q=-6.2,106.8",
+			want: "Monas â€” Gambir, Jakarta â€” https://maps.google.com/?q=-6.2,106.8",
 		},
 		{
 			name: "LocationCoordinatesOnly",
@@ -546,7 +546,7 @@ func TestExtractMessageTextFromProtoLocationMessages(t *testing.T) {
 					DegreesLongitude: proto.Float64(106.8),
 				},
 			},
-			want: "On my way — https://maps.google.com/?q=-6.2,106.8",
+			want: "On my way â€” https://maps.google.com/?q=-6.2,106.8",
 		},
 		{
 			name: "LiveLocationWithoutCaption",
@@ -737,7 +737,7 @@ func TestIsForwardableStorageMessage(t *testing.T) {
 		{name: "image", message: &domainChatStorage.Message{MediaType: "image", URL: "u", DirectPath: "/p"}, want: true},
 		{name: "call", message: &domainChatStorage.Message{MediaType: "call"}, want: false},
 		{name: "contact", message: &domainChatStorage.Message{Content: "Contact: Bob"}, want: false},
-		{name: "location", message: &domainChatStorage.Message{Content: "Pin — https://maps.google.com/?q=1,2"}, want: false},
+		{name: "location", message: &domainChatStorage.Message{Content: "Pin â€” https://maps.google.com/?q=1,2"}, want: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

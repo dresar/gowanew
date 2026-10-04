@@ -12,16 +12,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatwoot"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/uiasset"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
-	uimcp "github.com/aldinokemal/go-whatsapp-web-multidevice/ui/mcp"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/ui/rest"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/ui/rest/helpers"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/ui/rest/middleware"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/ui/websocket"
+	"github.com/dresar/gowanew/config"
+	"github.com/dresar/gowanew/infrastructure/chatwoot"
+	"github.com/dresar/gowanew/infrastructure/uiasset"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	"github.com/dresar/gowanew/pkg/utils"
+	uimcp "github.com/dresar/gowanew/ui/mcp"
+	"github.com/dresar/gowanew/ui/rest"
+	"github.com/dresar/gowanew/ui/rest/helpers"
+	"github.com/dresar/gowanew/ui/rest/middleware"
+	"github.com/dresar/gowanew/ui/websocket"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/basicauth"
 	"github.com/gofiber/fiber/v3/middleware/cors"
@@ -35,7 +35,7 @@ import (
 var restCmd = &cobra.Command{
 	Use:   "rest",
 	Short: "Send whatsapp API over http",
-	Long:  `This application is from clone https://github.com/aldinokemal/go-whatsapp-web-multidevice`,
+	Long:  `This application is from clone https://github.com/dresar/gowanew`,
 	Run:   restServer,
 }
 
@@ -89,7 +89,7 @@ func restServer(_ *cobra.Command, _ []string) {
 	var chatwootHandler *rest.ChatwootHandler
 	if config.ChatwootEnabled {
 		// Auto-provision the inbox, install the per-device client registry, then
-		// start the retry worker (registry before worker — see initChatwootForwarding).
+		// start the retry worker (registry before worker â€” see initChatwootForwarding).
 		initChatwootForwarding(chatStorageRepo)
 
 		chatwootHandler = rest.NewChatwootHandler(appUsecase, sendUsecase, messageUsecase, dm, chatStorageRepo)
@@ -157,7 +157,7 @@ func restServer(_ *cobra.Command, _ []string) {
 	// App info (version, limits) for standalone UIs; no device required
 	rest.InitRestAppInfo(apiGroup)
 
-	// MCP endpoint — same usecase instances as REST, so both surfaces share
+	// MCP endpoint â€” same usecase instances as REST, so both surfaces share
 	// one whatsmeow session. With OAuth disabled it keeps the existing global
 	// Basic Auth behavior; OAuth-enabled MCP was already mounted above.
 	if config.McpEnabled && !mcpOAuthRegistered {
@@ -227,7 +227,7 @@ func restServer(_ *cobra.Command, _ []string) {
 			logrus.Fatalln("Failed to start: ", err.Error())
 		}
 	case sig := <-sigCh:
-		logrus.Infof("Received %s — shutting down", sig)
+		logrus.Infof("Received %s â€” shutting down", sig)
 		if scheduleStop != nil {
 			scheduleStop()
 		}
@@ -255,7 +255,7 @@ func registerUIRoute(apiGroup fiber.Router, ctx context.Context) {
 			return c.JSON(utils.ResponseData{
 				Status:  200,
 				Code:    "SUCCESS",
-				Message: fmt.Sprintf("gowa %s — UI disabled", config.AppVersion),
+				Message: fmt.Sprintf("gowa %s â€” UI disabled", config.AppVersion),
 			})
 		})
 		return

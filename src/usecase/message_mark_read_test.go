@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	domainMessage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/message"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	domainMessage "github.com/dresar/gowanew/domains/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mau.fi/whatsmeow"

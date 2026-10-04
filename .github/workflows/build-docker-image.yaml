@@ -39,8 +39,8 @@ jobs:
           file: ./docker/golang.Dockerfile
           platforms: linux/amd64
           tags: |
-            ${{ secrets.REGISTRY_USERNAME }}/go-whatsapp-web-multidevice:${{ github.ref_name }}-amd
-            ghcr.io/${{ github.repository_owner }}/go-whatsapp-web-multidevice:${{ github.ref_name }}-amd
+            ${{ secrets.REGISTRY_USERNAME }}/gowanew:${{ github.ref_name }}-amd
+            ghcr.io/${{ github.repository_owner }}/gowanew:${{ github.ref_name }}-amd
 
   build-and-push-arm:
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
@@ -88,8 +88,8 @@ jobs:
           file: ./docker/golang.Dockerfile
           platforms: ${{ matrix.platform }}
           tags: |
-            ${{ secrets.REGISTRY_USERNAME }}/go-whatsapp-web-multidevice:${{ github.ref_name }}-${{ matrix.suffix }}
-            ghcr.io/${{ github.repository_owner }}/go-whatsapp-web-multidevice:${{ github.ref_name }}-${{ matrix.suffix }}
+            ${{ secrets.REGISTRY_USERNAME }}/gowanew:${{ github.ref_name }}-${{ matrix.suffix }}
+            ghcr.io/${{ github.repository_owner }}/gowanew:${{ github.ref_name }}-${{ matrix.suffix }}
 
   merge-manifest:
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
@@ -114,23 +114,23 @@ jobs:
         uses: docker/setup-buildx-action@v4
       - name: Create Versioned Manifest (${{ github.ref_name }})
         run: |
-          docker buildx imagetools create -t ${{ secrets.REGISTRY_USERNAME }}/go-whatsapp-web-multidevice:${{ github.ref_name }} \
-            ${{ secrets.REGISTRY_USERNAME }}/go-whatsapp-web-multidevice:${{ github.ref_name }}-amd \
-            ${{ secrets.REGISTRY_USERNAME }}/go-whatsapp-web-multidevice:${{ github.ref_name }}-arm \
-            ${{ secrets.REGISTRY_USERNAME }}/go-whatsapp-web-multidevice:${{ github.ref_name }}-armv7
+          docker buildx imagetools create -t ${{ secrets.REGISTRY_USERNAME }}/gowanew:${{ github.ref_name }} \
+            ${{ secrets.REGISTRY_USERNAME }}/gowanew:${{ github.ref_name }}-amd \
+            ${{ secrets.REGISTRY_USERNAME }}/gowanew:${{ github.ref_name }}-arm \
+            ${{ secrets.REGISTRY_USERNAME }}/gowanew:${{ github.ref_name }}-armv7
       - name: Create Versioned Manifest (GHCR) (${{ github.ref_name }})
         run: |
-          docker buildx imagetools create -t ghcr.io/${{ github.repository_owner }}/go-whatsapp-web-multidevice:${{ github.ref_name }} \
-            ghcr.io/${{ github.repository_owner }}/go-whatsapp-web-multidevice:${{ github.ref_name }}-amd \
-            ghcr.io/${{ github.repository_owner }}/go-whatsapp-web-multidevice:${{ github.ref_name }}-arm \
-            ghcr.io/${{ github.repository_owner }}/go-whatsapp-web-multidevice:${{ github.ref_name }}-armv7
+          docker buildx imagetools create -t ghcr.io/${{ github.repository_owner }}/gowanew:${{ github.ref_name }} \
+            ghcr.io/${{ github.repository_owner }}/gowanew:${{ github.ref_name }}-amd \
+            ghcr.io/${{ github.repository_owner }}/gowanew:${{ github.ref_name }}-arm \
+            ghcr.io/${{ github.repository_owner }}/gowanew:${{ github.ref_name }}-armv7
       - name: Create Latest Manifest (Docker Hub)
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          docker buildx imagetools create -t ${{ secrets.REGISTRY_USERNAME }}/go-whatsapp-web-multidevice:latest \
-            ${{ secrets.REGISTRY_USERNAME }}/go-whatsapp-web-multidevice:${{ github.ref_name }}
+          docker buildx imagetools create -t ${{ secrets.REGISTRY_USERNAME }}/gowanew:latest \
+            ${{ secrets.REGISTRY_USERNAME }}/gowanew:${{ github.ref_name }}
       - name: Create Latest Manifest (GHCR)
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          docker buildx imagetools create -t ghcr.io/${{ github.repository_owner }}/go-whatsapp-web-multidevice:latest \
-            ghcr.io/${{ github.repository_owner }}/go-whatsapp-web-multidevice:${{ github.ref_name }}
+          docker buildx imagetools create -t ghcr.io/${{ github.repository_owner }}/gowanew:latest \
+            ghcr.io/${{ github.repository_owner }}/gowanew:${{ github.ref_name }}

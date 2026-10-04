@@ -5,10 +5,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatwoot"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	"github.com/dresar/gowanew/infrastructure/chatwoot"
+	"github.com/dresar/gowanew/pkg/utils"
 	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
 )
@@ -128,7 +128,7 @@ func (h *ChatwootHandler) UpsertChatwootConfig(c fiber.Ctx) error {
 
 	// Token: keep the stored token when omitted on update; required on create.
 	// A client that echoes back the masked value from a GET response also keeps
-	// the stored token — otherwise the mask itself would silently become the
+	// the stored token â€” otherwise the mask itself would silently become the
 	// credential and every Chatwoot call would start failing with 401s.
 	apiToken := strings.TrimSpace(req.APIToken)
 	if apiToken == "" {
@@ -142,7 +142,7 @@ func (h *ChatwootHandler) UpsertChatwootConfig(c fiber.Ctx) error {
 
 	// Guard against silently repointing historical conversations: changing the
 	// routing identity (url/account/inbox) of a config that already has links is
-	// rejected — create a new device config instead.
+	// rejected â€” create a new device config instead.
 	if existing != nil {
 		routingChanged := existing.ChatwootURL != canonicalURL || existing.AccountID != req.AccountID || existing.InboxID != req.InboxID
 		if routingChanged {
@@ -197,7 +197,7 @@ func (h *ChatwootHandler) UpsertChatwootConfig(c fiber.Ctx) error {
 // reverse lookup and hijack reply destinations toward the old mapping.
 // DELETE /devices/:device_id/chatwoot/config
 func (h *ChatwootHandler) DeleteChatwootConfig(c fiber.Ctx) error {
-	// Resolve aliases/JIDs the same way GET and PUT do — a raw JID param would
+	// Resolve aliases/JIDs the same way GET and PUT do â€” a raw JID param would
 	// otherwise delete nothing and still report success. Fall back to the raw
 	// param so a config orphaned by device removal stays deletable.
 	deviceID, ok := h.resolveConfigDeviceID(c)

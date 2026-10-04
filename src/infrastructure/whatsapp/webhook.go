@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	"github.com/dresar/gowanew/config"
+	"github.com/dresar/gowanew/domains/chatstorage"
+	pkgError "github.com/dresar/gowanew/pkg/error"
+	"github.com/dresar/gowanew/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
 

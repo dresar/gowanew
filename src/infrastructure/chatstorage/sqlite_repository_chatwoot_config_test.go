@@ -3,7 +3,7 @@ package chatstorage
 import (
 	"testing"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 )
 
 func TestSQLiteRepositoryChatwootDeviceConfigCRUD(t *testing.T) {
@@ -205,8 +205,8 @@ func TestSQLiteRepositoryConversationLookupIsAccountScoped(t *testing.T) {
 	}
 }
 
-// Two separate Chatwoot servers can collide on (conversation_id, account_id) —
-// fresh installs all start at account 1, conversation 1 — so per-device
+// Two separate Chatwoot servers can collide on (conversation_id, account_id) â€”
+// fresh installs all start at account 1, conversation 1 â€” so per-device
 // (forced-route) callers additionally scope the lookup by their own config id.
 func TestSQLiteRepositoryConversationLookupIsConfigScoped(t *testing.T) {
 	repo := newTestSQLiteRepository(t)

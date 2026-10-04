@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	domainMessage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/message"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	domainMessage "github.com/dresar/gowanew/domains/message"
+	"github.com/dresar/gowanew/pkg/utils"
 	mcpg "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )

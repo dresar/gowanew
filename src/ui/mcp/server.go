@@ -1,17 +1,17 @@
 package mcp
 
 import (
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainApp "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/app"
-	domainChat "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chat"
-	domainGroup "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/group"
-	domainMessage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/message"
-	domainSend "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/send"
-	domainUser "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/user"
+	"github.com/dresar/gowanew/config"
+	domainApp "github.com/dresar/gowanew/domains/app"
+	domainChat "github.com/dresar/gowanew/domains/chat"
+	domainGroup "github.com/dresar/gowanew/domains/group"
+	domainMessage "github.com/dresar/gowanew/domains/message"
+	domainSend "github.com/dresar/gowanew/domains/send"
+	domainUser "github.com/dresar/gowanew/domains/user"
 	"github.com/mark3labs/mcp-go/server"
 )
 
-// Deps carries the usecase instances the MCP tools call — the same instances
+// Deps carries the usecase instances the MCP tools call â€” the same instances
 // the REST handlers hold, so both surfaces share one whatsmeow session.
 type Deps struct {
 	App      domainApp.IAppUsecase

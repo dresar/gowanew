@@ -3,8 +3,8 @@ package device
 import (
 	"context"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/domains/app"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
+	"github.com/dresar/gowanew/domains/app"
+	"github.com/dresar/gowanew/domains/chatstorage"
 )
 
 // IDeviceUsecase defines device lifecycle operations.

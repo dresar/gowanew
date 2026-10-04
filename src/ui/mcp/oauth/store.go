@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/sqlite"
+	"github.com/dresar/gowanew/pkg/sqlite"
 )
 
 type store struct {

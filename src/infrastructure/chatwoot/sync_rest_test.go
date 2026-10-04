@@ -4,15 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 )
 
 func TestGroupNameResolver_NilClientReturnsEmpty(t *testing.T) {
 	// resolve must short-circuit to "" when there is no WhatsApp client,
 	// because the caller (SyncHistory) falls back to the stored chat name in
 	// that case. Crucially this also lets the resolver be exercised without a
-	// live *whatsmeow.Client — the nil guard is the first statement.
+	// live *whatsmeow.Client â€” the nil guard is the first statement.
 	r := newGroupNameResolver()
 	if got := r.resolve(context.Background(), nil, "120363123456789@g.us"); got != "" {
 		t.Errorf("resolve(nil client) = %q, want empty string", got)

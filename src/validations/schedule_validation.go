@@ -7,8 +7,8 @@ import (
 	// Windows release binaries have no system zoneinfo to load timezones from.
 	_ "time/tzdata"
 
-	domainSend "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/send"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
+	domainSend "github.com/dresar/gowanew/domains/send"
+	pkgError "github.com/dresar/gowanew/pkg/error"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 

@@ -3,7 +3,7 @@ package chatstorage
 import (
 	"testing"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 )
 
 // The devices registry must round-trip the full AD JID (number:NN@s.whatsapp.net) so

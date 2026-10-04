@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	domainCall "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/call"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/validations"
+	domainCall "github.com/dresar/gowanew/domains/call"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	pkgError "github.com/dresar/gowanew/pkg/error"
+	"github.com/dresar/gowanew/pkg/utils"
+	"github.com/dresar/gowanew/validations"
 	"github.com/sirupsen/logrus"
 )
 

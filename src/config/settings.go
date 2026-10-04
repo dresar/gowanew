@@ -23,7 +23,7 @@ var (
 	// asset and serves it at "/".
 	AppUIEnabled        = true
 	AppUIAutoUpdate     = true
-	AppUIRepo           = "aldinokemal/gowa-ui"
+	AppUIRepo           = "dresar/gowa-ui"
 	AppUIAssetName      = "gowa-ui.html"
 	AppUIUpdateInterval = 3 * time.Hour
 	AppUIGithubToken    = "" // optional, raises the GitHub API rate limit

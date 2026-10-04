@@ -8,13 +8,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
+	"github.com/dresar/gowanew/config"
 )
 
 // saveProvisionConfig snapshots every config global EnsureInbox reads or writes
 // and returns a restore func. Provisioning mutates package globals (notably
-// ChatwootInboxID), so without this a leaked value would make sibling tests —
-// and even later cases in the same test — observe the wrong state.
+// ChatwootInboxID), so without this a leaked value would make sibling tests â€”
+// and even later cases in the same test â€” observe the wrong state.
 func saveProvisionConfig(t *testing.T) func() {
 	t.Helper()
 	origAuto := config.ChatwootAutoCreate
@@ -148,7 +148,7 @@ func TestEnsureInbox_ReusesExistingInboxByName(t *testing.T) {
 
 func TestEnsureInbox_SkipsSameNameNonAPIInbox(t *testing.T) {
 	// A same-name inbox that is NOT an API channel (e.g. a native WhatsApp
-	// channel also called "WhatsApp") must NOT be reused — binding to it would
+	// channel also called "WhatsApp") must NOT be reused â€” binding to it would
 	// silently break agent-reply delivery. EnsureInbox skips it and creates a
 	// dedicated API inbox instead.
 	defer saveProvisionConfig(t)()

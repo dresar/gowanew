@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	domainMessage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/message"
+	domainMessage "github.com/dresar/gowanew/domains/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mau.fi/whatsmeow"
@@ -132,9 +132,9 @@ func TestContainsLinkToken(t *testing.T) {
 		{"quotes", "\"" + link + "\"", true},
 		{"markdown link", "[label](" + link + ")", true},
 		{"tight prose", "See(" + link + ")", true},
-		{"curly double quotes", "“" + link + "”", true},
-		{"curly single quotes in parentheses", "(‘" + link + "’)", true},
-		{"curly quote inside another url", "https://evil.test/“" + link + "”", false},
+		{"curly double quotes", "â€œ" + link + "â€", true},
+		{"curly single quotes in parentheses", "(â€˜" + link + "â€™)", true},
+		{"curly quote inside another url", "https://evil.test/â€œ" + link + "â€", false},
 		{"own line", "09:59\n" + link, true},
 		{"longer host", link + ".evil", false},
 		{"longer host in parentheses", "(" + link + ".evil)", false},

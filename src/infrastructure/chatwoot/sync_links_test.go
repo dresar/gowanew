@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatwoot/pgimport"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	"github.com/dresar/gowanew/infrastructure/chatwoot/pgimport"
 )
 
 type chatwootSyncLinkRepo struct {

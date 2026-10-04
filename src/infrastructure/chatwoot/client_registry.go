@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 )
 
 // ErrClientRegistryUnavailable is returned when a Chatwoot forward is attempted
@@ -32,7 +32,7 @@ type ResolvedConfig struct {
 //
 // Resolution is fail-fast: once any per-device config row exists, an unmapped
 // device resolves to nil (caller skips / errors) rather than silently falling
-// back to the global env inbox — which would mis-deliver across accounts. The
+// back to the global env inbox â€” which would mis-deliver across accounts. The
 // env config is only used as a single "legacy" config while the table is empty.
 type ClientRegistry struct {
 	mu    sync.RWMutex
@@ -53,7 +53,7 @@ func NewClientRegistry(repo domainChatStorage.IChatStorageRepository) *ClientReg
 func (r *ClientRegistry) Resolve(identifier string) (*ResolvedConfig, error) {
 	// The identifier is retained past this call (cache map key, ResolvedConfig
 	// DeviceID). Callers on the fiber paths hand us c.Params()/body-derived
-	// strings whose backing buffer fasthttp recycles after the request — without
+	// strings whose backing buffer fasthttp recycles after the request â€” without
 	// a copy the cached key's bytes would silently mutate under the next request.
 	identifier = strings.Clone(strings.TrimSpace(identifier))
 
@@ -128,7 +128,7 @@ func (r *ClientRegistry) ResolveByInbox(accountID, inboxID int) (*ResolvedConfig
 // while the config table was empty, under whatever identifier the caller used
 // (often a JID, with DeviceID set to that same identifier), so a device-id
 // match can never find them. Leaving them would keep routing forwards to the
-// env inbox after the first per-device config is written — exactly the
+// env inbox after the first per-device config is written â€” exactly the
 // mis-delivery the fail-fast contract exists to prevent.
 func (r *ClientRegistry) Invalidate(deviceID string) {
 	deviceID = strings.TrimSpace(deviceID)

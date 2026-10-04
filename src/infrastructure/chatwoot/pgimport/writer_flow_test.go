@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 )
 
 // SQL fragments for the upsertContact create-path, kept as literals so
@@ -90,7 +90,7 @@ func TestImportChat_HappyPath(t *testing.T) {
 		WithArgs(imp.accountID, imp.inboxID, conversationStatusOpen, 100, 200, t1).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(300))
 
-	// msg1 — savepoint, probe miss, insert, release.
+	// msg1 â€” savepoint, probe miss, insert, release.
 	mock.ExpectExec(regexp.QuoteMeta("SAVEPOINT cw_msg")).WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectQuery(regexp.QuoteMeta(idempotencyProbeSQL)).
 		WithArgs(imp.inboxID, "WAID:wa-1").
@@ -98,7 +98,7 @@ func TestImportChat_HappyPath(t *testing.T) {
 	mock.ExpectQuery(`INSERT INTO messages`).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectExec(regexp.QuoteMeta("RELEASE SAVEPOINT cw_msg")).WillReturnResult(sqlmock.NewResult(0, 0))
 
-	// msg2 — same shape.
+	// msg2 â€” same shape.
 	mock.ExpectExec(regexp.QuoteMeta("SAVEPOINT cw_msg")).WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectQuery(regexp.QuoteMeta(idempotencyProbeSQL)).
 		WithArgs(imp.inboxID, "WAID:wa-2").
@@ -332,7 +332,7 @@ func TestImportChat_ClosedReturnsErrorNoDB(t *testing.T) {
 }
 
 func TestImportChat_EmptyChatJIDReturnsErrorNoDB(t *testing.T) {
-	// An empty ChatJID is rejected before BeginTx — no DB calls.
+	// An empty ChatJID is rejected before BeginTx â€” no DB calls.
 	imp, mock, cleanup := newUpsertContactTestImporter(t)
 	defer cleanup()
 
@@ -435,8 +435,8 @@ func TestImportChat_FatalSavepointErrorAbortsLoopAndRollsBack(t *testing.T) {
 }
 
 func TestImportChat_CanceledContextFailsAtBeginTx(t *testing.T) {
-	// An already-canceled context fails at BeginTx — database/sql checks ctx
-	// before reaching the driver — so ImportChat returns the wrapped "begin tx"
+	// An already-canceled context fails at BeginTx â€” database/sql checks ctx
+	// before reaching the driver â€” so ImportChat returns the wrapped "begin tx"
 	// error with res == nil and never registers any mocked query. This codifies
 	// that cancellation before the transaction opens is a hard failure, not a
 	// partial import.

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	"github.com/dresar/gowanew/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
@@ -361,7 +361,7 @@ func (r *SQLiteRepository) StoreMessage(message *domainChatStorage.Message) erro
 // the write, and the write then clobbers it. SQLite evaluates the EXISTS as part
 // of the same statement, so the check and the write are one operation.
 //
-// Everything except content is written as normal — only content is pinned once
+// Everything except content is written as normal â€” only content is pinned once
 // an edit exists for this row.
 func (r *SQLiteRepository) storeSentMessagePreservingEdits(message *domainChatStorage.Message) error {
 	now := time.Now()
@@ -1292,7 +1292,7 @@ func (r *SQLiteRepository) CountChatwootMessageLinksByConfig(configID int64) (in
 }
 
 // DeleteChatwootMessageLinksByConfig removes every message link written under a
-// device config. configID 0 (legacy/env links) is refused — those rows are not
+// device config. configID 0 (legacy/env links) is refused â€” those rows are not
 // owned by any per-device config.
 func (r *SQLiteRepository) DeleteChatwootMessageLinksByConfig(configID int64) error {
 	if configID == 0 {
@@ -1361,7 +1361,7 @@ func (r *SQLiteRepository) SaveChatwootDeviceConfig(cfg *domainChatStorage.Chatw
 		return nil
 	}
 
-	// Updated an existing row — load its id so callers can scope links to it. A
+	// Updated an existing row â€” load its id so callers can scope links to it. A
 	// zero id would silently unscope every link written for this config.
 	if cfg.ID == 0 {
 		if err := r.db.QueryRow("SELECT id FROM chatwoot_device_configs WHERE device_id = ?", cfg.DeviceID).Scan(&cfg.ID); err != nil {
@@ -1412,7 +1412,7 @@ func (r *SQLiteRepository) GetChatwootDeviceConfig(deviceID string) (*domainChat
 // The two keys are resolved separately: device ids are arbitrary user-supplied
 // strings, so one row's device_id can collide with another row's device_jid
 // (each column is only unique on its own). A single OR query with LIMIT 1
-// would then pick a query-plan-dependent winner and misroute — instead the
+// would then pick a query-plan-dependent winner and misroute â€” instead the
 // collision is surfaced as an explicit error so the operator renames the
 // device rather than silently sending through the wrong Chatwoot account.
 func (r *SQLiteRepository) GetChatwootDeviceConfigByIdentifier(identifier string) (*domainChatStorage.ChatwootDeviceConfig, error) {
@@ -2704,9 +2704,9 @@ func (r *SQLiteRepository) TruncateAllDataWithLogging(logPrefix string) error {
 	} else {
 		logrus.Infof("[%s] Storage after truncation: %d chats, %d messages", logPrefix, chatCountAfter, messageCountAfter)
 		if chatCountAfter == 0 && messageCountAfter == 0 {
-			logrus.Infof("[%s] ✅ Chatstorage truncation completed successfully", logPrefix)
+			logrus.Infof("[%s] âœ… Chatstorage truncation completed successfully", logPrefix)
 		} else {
-			logrus.Warnf("[%s] ⚠️ Truncation may not have completed fully", logPrefix)
+			logrus.Warnf("[%s] âš ï¸ Truncation may not have completed fully", logPrefix)
 		}
 	}
 
@@ -2759,7 +2759,7 @@ func (r *SQLiteRepository) StoreSentMessageWithContext(ctx context.Context, mess
 	// Store the message BEFORE the chat row. The reverse order left a visible
 	// inconsistency when the context deadline expired between the two writes:
 	// the chat surfaced with a fresh last_message_time while the message
-	// itself was missing. Losing only the chat bump is invisible instead —
+	// itself was missing. Losing only the chat bump is invisible instead â€”
 	// the next stored message repairs it.
 	message := &domainChatStorage.Message{
 		ID:              messageID,
@@ -2782,7 +2782,7 @@ func (r *SQLiteRepository) StoreSentMessageWithContext(ctx context.Context, mess
 	// wrapSendMessage persists asynchronously, so an edit sent moments later can
 	// reach storage BEFORE this does. StoreMessage's existing-row path updates
 	// content unconditionally, so writing the original text now would roll that
-	// edit back — and mergeReplyContext quotes from that row, which is the stale
+	// edit back â€” and mergeReplyContext quotes from that row, which is the stale
 	// quote the edit sync exists to prevent.
 	if err := r.storeSentMessagePreservingEdits(message); err != nil {
 		return fmt.Errorf("failed to store message: %w", err)
@@ -2790,8 +2790,8 @@ func (r *SQLiteRepository) StoreSentMessageWithContext(ctx context.Context, mess
 
 	// The individual writes cannot honor the context (database/sql Exec;
 	// busy_timeout bounds each statement), so enforce the deadline here: once
-	// it has passed, skip the chat bump. Losing it is invisible — the next
-	// stored message repairs it — while the message row above is already safe.
+	// it has passed, skip the chat bump. Losing it is invisible â€” the next
+	// stored message repairs it â€” while the message row above is already safe.
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

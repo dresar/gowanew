@@ -5,13 +5,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
+	"github.com/dresar/gowanew/config"
 )
 
 // TestBuildEditDeleteChatwootContent pins how WhatsApp edit/revoke/delete events
 // render into the Chatwoot note text and the WhatsApp message id used for
 // threading. The exact emoji-prefixed strings are agent-facing contract, and the
-// threadID is what anchors the note onto the message it refers to — a wrong key
+// threadID is what anchors the note onto the message it refers to â€” a wrong key
 // here detaches the note in the inbox. The edited body is run through the WA->CW
 // markdown translator, so emphasis added in the original edit survives the hop.
 func TestBuildEditDeleteChatwootContent(t *testing.T) {
@@ -22,7 +22,7 @@ func TestBuildEditDeleteChatwootContent(t *testing.T) {
 			"body":                "new text",
 			"original_message_id": "wamid-edit-1",
 		}, false, "")
-		if content != "✏️ **Edited:** new text" {
+		if content != "âœï¸ **Edited:** new text" {
 			t.Fatalf("content = %q", content)
 		}
 		if threadID != "wamid-edit-1" {
@@ -38,7 +38,7 @@ func TestBuildEditDeleteChatwootContent(t *testing.T) {
 			"body":                "*hi*",
 			"original_message_id": "wamid-edit-md",
 		}, false, "")
-		if content != "✏️ **Edited:** **hi**" {
+		if content != "âœï¸ **Edited:** **hi**" {
 			t.Fatalf("content = %q", content)
 		}
 		// Defensive: the translated markdown must appear inside the rendered note.
@@ -54,7 +54,7 @@ func TestBuildEditDeleteChatwootContent(t *testing.T) {
 			"body":                "*bold* _it_",
 			"original_message_id": "wamid-edit-mix",
 		}, false, "")
-		if content != "✏️ **Edited:** **bold** *it*" {
+		if content != "âœï¸ **Edited:** **bold** *it*" {
 			t.Fatalf("content = %q", content)
 		}
 	})
@@ -66,7 +66,7 @@ func TestBuildEditDeleteChatwootContent(t *testing.T) {
 			"body":                "*hi*",
 			"original_message_id": "wamid-edit-grp",
 		}, true, "Alice")
-		if content != "✏️ **Edited:** Alice: **hi**" {
+		if content != "âœï¸ **Edited:** Alice: **hi**" {
 			t.Fatalf("content = %q", content)
 		}
 		if threadID != "wamid-edit-grp" {
@@ -80,7 +80,7 @@ func TestBuildEditDeleteChatwootContent(t *testing.T) {
 			"body":                "hello",
 			"original_message_id": "wamid-edit-noname",
 		}, true, "")
-		if content != "✏️ **Edited:** hello" {
+		if content != "âœï¸ **Edited:** hello" {
 			t.Fatalf("content = %q", content)
 		}
 	})
@@ -92,7 +92,7 @@ func TestBuildEditDeleteChatwootContent(t *testing.T) {
 			"body":                "solo",
 			"original_message_id": "wamid-edit-1to1",
 		}, false, "Bob")
-		if content != "✏️ **Edited:** solo" {
+		if content != "âœï¸ **Edited:** solo" {
 			t.Fatalf("content = %q", content)
 		}
 	})
@@ -104,7 +104,7 @@ func TestBuildEditDeleteChatwootContent(t *testing.T) {
 			"body":                "",
 			"original_message_id": "wamid-edit-empty",
 		}, false, "")
-		if content != "✏️ _(message edited)_" {
+		if content != "âœï¸ _(message edited)_" {
 			t.Fatalf("content = %q", content)
 		}
 		// threadID is still threaded onto the original message even with no body.
@@ -120,7 +120,7 @@ func TestBuildEditDeleteChatwootContent(t *testing.T) {
 			"body":                "   \t  ",
 			"original_message_id": "wamid-edit-ws",
 		}, false, "")
-		if content != "✏️ _(message edited)_" {
+		if content != "âœï¸ _(message edited)_" {
 			t.Fatalf("content = %q", content)
 		}
 	})
@@ -132,7 +132,7 @@ func TestBuildEditDeleteChatwootContent(t *testing.T) {
 			"body":                "   ",
 			"original_message_id": "wamid-edit-ws-grp",
 		}, true, "Alice")
-		if content != "✏️ _(message edited)_" {
+		if content != "âœï¸ _(message edited)_" {
 			t.Fatalf("content = %q", content)
 		}
 	})
@@ -142,7 +142,7 @@ func TestBuildEditDeleteChatwootContent(t *testing.T) {
 		content, threadID := buildEditDeleteChatwootContent("message.edited", map[string]any{
 			"original_message_id": "wamid-edit-nobody",
 		}, false, "")
-		if content != "✏️ _(message edited)_" {
+		if content != "âœï¸ _(message edited)_" {
 			t.Fatalf("content = %q", content)
 		}
 		if threadID != "wamid-edit-nobody" {
@@ -156,7 +156,7 @@ func TestBuildEditDeleteChatwootContent(t *testing.T) {
 		content, threadID := buildEditDeleteChatwootContent("message.edited", map[string]any{
 			"body": "text",
 		}, false, "")
-		if content != "✏️ **Edited:** text" {
+		if content != "âœï¸ **Edited:** text" {
 			t.Fatalf("content = %q", content)
 		}
 		if threadID != "" {
@@ -170,7 +170,7 @@ func TestBuildEditDeleteChatwootContent(t *testing.T) {
 		content, threadID := buildEditDeleteChatwootContent("message.revoked", map[string]any{
 			"revoked_message_id": "wamid-rev-1",
 		}, false, "")
-		if content != "🗑️ _This message was deleted._" {
+		if content != "ðŸ—‘ï¸ _This message was deleted._" {
 			t.Fatalf("content = %q", content)
 		}
 		if threadID != "wamid-rev-1" {
@@ -183,14 +183,14 @@ func TestBuildEditDeleteChatwootContent(t *testing.T) {
 		content, _ := buildEditDeleteChatwootContent("message.revoked", map[string]any{
 			"revoked_message_id": "wamid-rev-grp",
 		}, true, "Alice")
-		if content != "🗑️ _This message was deleted._" {
+		if content != "ðŸ—‘ï¸ _This message was deleted._" {
 			t.Fatalf("content = %q", content)
 		}
 	})
 
 	t.Run("revoked with missing id yields empty threadID", func(t *testing.T) {
 		content, threadID := buildEditDeleteChatwootContent("message.revoked", map[string]any{}, false, "")
-		if content != "🗑️ _This message was deleted._" {
+		if content != "ðŸ—‘ï¸ _This message was deleted._" {
 			t.Fatalf("content = %q", content)
 		}
 		if threadID != "" {
@@ -204,7 +204,7 @@ func TestBuildEditDeleteChatwootContent(t *testing.T) {
 		content, threadID := buildEditDeleteChatwootContent("message.deleted", map[string]any{
 			"deleted_message_id": "wamid-del-1",
 		}, false, "")
-		if content != "🗑️ _This message was deleted._" {
+		if content != "ðŸ—‘ï¸ _This message was deleted._" {
 			t.Fatalf("content = %q", content)
 		}
 		if threadID != "wamid-del-1" {
@@ -275,7 +275,7 @@ func TestExtractChatwootContactInfoIgnoreJids(t *testing.T) {
 	})
 
 	t.Run("@g.us wildcard does not reject a 1:1 chat", func(t *testing.T) {
-		// Same wildcard must leave ordinary @s.whatsapp.net chats untouched — the
+		// Same wildcard must leave ordinary @s.whatsapp.net chats untouched â€” the
 		// suffix doesn't match, so normal processing proceeds.
 		config.ChatwootIgnoreJids = []string{"@g.us"}
 		info, err := extractChatwootContactInfo(ctx, map[string]any{
@@ -404,7 +404,7 @@ func TestBuildChatwootMessageContentMarkdown(t *testing.T) {
 
 	t.Run("group sender prefix applied after translation", func(t *testing.T) {
 		// The body is translated first ("*hi*" -> "**hi**"), then the sender prefix is
-		// prepended — so the prefix sits outside the translated emphasis.
+		// prepended â€” so the prefix sits outside the translated emphasis.
 		content, _ := buildChatwootMessageContent(map[string]any{
 			"body": "*hi*",
 		}, true, "Alice")

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	domainMessage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/message"
+	domainMessage "github.com/dresar/gowanew/domains/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -70,10 +70,10 @@ func TestHandleMessageDispatch(t *testing.T) {
 	t.Run("react", func(t *testing.T) {
 		svc := &stubMessageService{}
 		h := InitMcpMessage(svc, &stubResolver{})
-		_, err := h.handleMessage(deviceCtx(), callReq(withAction("react", map[string]any{"emoji": "👍"})))
+		_, err := h.handleMessage(deviceCtx(), callReq(withAction("react", map[string]any{"emoji": "ðŸ‘"})))
 		require.NoError(t, err)
 		require.NotNil(t, svc.reacted)
-		assert.Equal(t, "👍", svc.reacted.Emoji)
+		assert.Equal(t, "ðŸ‘", svc.reacted.Emoji)
 	})
 
 	t.Run("edit", func(t *testing.T) {

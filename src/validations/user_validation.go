@@ -3,8 +3,8 @@ package validations
 import (
 	"context"
 
-	domainUser "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/user"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
+	domainUser "github.com/dresar/gowanew/domains/user"
+	pkgError "github.com/dresar/gowanew/pkg/error"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 

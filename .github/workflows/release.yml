@@ -143,8 +143,8 @@ jobs:
           release:
             draft: false
             github:
-              owner: "aldinokemal"
-              name: "go-whatsapp-web-multidevice"
+              owner: "dresar"
+              name: "gowanew"
           EOF
 
       - name: Run GoReleaser for Linux/Windows
@@ -217,8 +217,8 @@ jobs:
           release:
             draft: false
             github:
-              owner: "aldinokemal"
-              name: "go-whatsapp-web-multidevice"
+              owner: "dresar"
+              name: "gowanew"
           EOF
 
       - name: Run GoReleaser for macOS

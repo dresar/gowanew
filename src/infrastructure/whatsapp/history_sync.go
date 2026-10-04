@@ -8,9 +8,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	"github.com/dresar/gowanew/pkg/utils"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waHistorySync"
 	"go.mau.fi/whatsmeow/types"
@@ -195,7 +195,7 @@ func processConversationMessages(ctx context.Context, data *waHistorySync.Histor
 						}
 					}
 				} else {
-					// Check if this is a group chat — group messages must have a participant
+					// Check if this is a group chat â€” group messages must have a participant
 					// to identify the actual sender. Without it, we'd incorrectly store the
 					// group JID as the sender (see GitHub issue #609).
 					if jid.Server == "g.us" {
@@ -418,7 +418,7 @@ func processPushNames(ctx context.Context, data *waHistorySync.HistorySync, chat
 // A conversation's own DisplayName cannot be trusted for one-to-one chats: it
 // arrives empty for many of them, and for some it carries the account owner's
 // own push name, which then gets written as the name of somebody else's chat.
-// Neither is repairable later — the read path's resolver only replaces names
+// Neither is repairable later â€” the read path's resolver only replaces names
 // that look like a JID or a bare number, so an owner's name sticks forever, and
 // chat search filters on the stored name in SQL before any resolver runs, which
 // makes those contacts unsearchable.

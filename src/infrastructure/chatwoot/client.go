@@ -19,8 +19,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	"github.com/dresar/gowanew/config"
+	"github.com/dresar/gowanew/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -69,7 +69,7 @@ func Retryable(err error) bool {
 	if errors.As(err, &httpErr) {
 		return httpErr.StatusCode == http.StatusTooManyRequests || httpErr.StatusCode >= 500
 	}
-	// Non-HTTP error: network, timeout, json encode, etc. — retry.
+	// Non-HTTP error: network, timeout, json encode, etc. â€” retry.
 	return true
 }
 
@@ -78,7 +78,7 @@ var (
 	defaultClientOnce sync.Once
 
 	// sentMessageIDs tracks Chatwoot message IDs created by our API to prevent
-	// echo loops: WhatsApp msg → synced to Chatwoot → Chatwoot webhook fires →
+	// echo loops: WhatsApp msg â†’ synced to Chatwoot â†’ Chatwoot webhook fires â†’
 	// would re-send to WhatsApp without this guard.
 	sentMessageIDs    sync.Map
 	sentMessageIDsTTL = 5 * time.Minute
@@ -123,7 +123,7 @@ func IsMessageSentByUs(accountID, messageID int) bool {
 		sentMessageIDs.Delete(key)
 		return false
 	}
-	// Don't delete on check — Chatwoot may fire multiple webhook events
+	// Don't delete on check â€” Chatwoot may fire multiple webhook events
 	// (e.g. message_created + conversation_updated) for the same message.
 	// Entries are cleaned up by the background sweeper after TTL expires.
 	return true
@@ -157,7 +157,7 @@ func NewClient() *Client {
 // (a stored, already-validated URL falls back to a trimmed value on error). The
 // HTTP client is SSRF-guarded at connect time unless an explicit host allowlist
 // is configured (CHATWOOT_ALLOWED_HOSTS), which is the operator's opt-in to
-// trust specific hosts — including internal ones.
+// trust specific hosts â€” including internal ones.
 func NewClientFromConfig(baseURL, apiToken string, accountID, inboxID int) *Client {
 	return newChatwootClient(baseURL, apiToken, accountID, inboxID, len(config.ChatwootAllowedHosts) == 0)
 }
@@ -592,7 +592,7 @@ func (c *Client) FindOrCreateConversation(contactID int, sourceID string) (*Conv
 
 	// No active conversation. When reopen is enabled, prefer reopening the
 	// contact's most recent (resolved) conversation over spawning a new thread,
-	// so a returning customer continues their existing conversation — matching
+	// so a returning customer continues their existing conversation â€” matching
 	// the direct-DB importer, which always reuses the latest conversation row.
 	if config.ChatwootReopenConversation {
 		if latest := selectLatestConversation(items, c.InboxID, contactID); latest != nil {
@@ -775,7 +775,7 @@ func (c *Client) DeleteMessage(conversationID, messageID int) error {
 
 func (c *Client) UpdateLastSeen(conversationID int, contactInboxSourceID string) error {
 	// inbox_identifier is immutable, so resolve it once and reuse the cached
-	// value — read sync fires this per receipt and a full inbox-list GET each
+	// value â€” read sync fires this per receipt and a full inbox-list GET each
 	// time is pure overhead.
 	inboxIdentifier := c.InboxIdentifier
 	if inboxIdentifier == "" {

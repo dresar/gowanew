@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	domainCall "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/call"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
+	domainCall "github.com/dresar/gowanew/domains/call"
+	pkgError "github.com/dresar/gowanew/pkg/error"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 

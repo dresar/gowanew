@@ -11,8 +11,8 @@ import (
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	"github.com/dresar/gowanew/config"
+	"github.com/dresar/gowanew/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow/types/events"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -185,9 +185,9 @@ func buildEventPayload(ctx context.Context, client *whatsmeow.Client, evt *event
 		// requests).
 		// Downstream (Chatwoot) will render it as "(Unsupported message
 		// type)" with no way to tell which WhatsApp message kind caused it.
-		// Log which proto field is populated — never its value, since that
+		// Log which proto field is populated â€” never its value, since that
 		// can carry customer message content, media URLs, and decryption
-		// keys — so a future occurrence is diagnosable from logs alone.
+		// keys â€” so a future occurrence is diagnosable from logs alone.
 		logrus.Warnf("Unrecognized message type from %s (id=%s): populated proto fields=%v", evt.Info.Sender.String(), evt.Info.ID, populatedMessageFields(msg))
 	}
 
@@ -254,7 +254,7 @@ func hasRecognizedMessageType(msg *waE2E.Message) bool {
 
 // populatedMessageFields lists the proto field names set on msg (e.g.
 // "interactiveMessage", "templateMessage"), using reflection purely for
-// field descriptors — never field values — so this is safe to log at warn
+// field descriptors â€” never field values â€” so this is safe to log at warn
 // level even though the message itself may carry customer content.
 func populatedMessageFields(msg *waE2E.Message) []string {
 	if msg == nil {
@@ -483,12 +483,12 @@ func buildMediaFields(ctx context.Context, client *whatsmeow.Client, msg *waE2E.
 }
 
 // collectInteractiveMedia extracts every image/video/document reachable from
-// an InteractiveMessage: the root header (common for marketing CTA messages —
+// an InteractiveMessage: the root header (common for marketing CTA messages â€”
 // a product photo above the button) and, recursively, each carousel card's
 // own header (a carousel's cards are themselves full InteractiveMessage
 // values). Without this, buildMediaFields only looks at the top-level
-// message — which is empty for InteractiveMessage, since it's a distinct
-// oneof case from GetImageMessage()/GetVideoMessage()/GetDocumentMessage() —
+// message â€” which is empty for InteractiveMessage, since it's a distinct
+// oneof case from GetImageMessage()/GetVideoMessage()/GetDocumentMessage() â€”
 // so header media silently never reached Chatwoot. Returns nil when
 // WHATSAPP_AUTO_DOWNLOAD_MEDIA is disabled: as with top-level media, a
 // URL-only reference isn't something Chatwoot can fetch itself, so there's

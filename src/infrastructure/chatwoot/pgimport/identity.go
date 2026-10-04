@@ -3,26 +3,26 @@ package pgimport
 import (
 	"strings"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	"github.com/dresar/gowanew/pkg/utils"
 )
 
-// Chatwoot enum values. These have been stable across Chatwoot 2.x → 4.x;
+// Chatwoot enum values. These have been stable across Chatwoot 2.x â†’ 4.x;
 // they come from the Rails models `Message.message_types`, `Message.statuses`,
 // `Message.content_types`, and `Conversation.statuses`.
 //
 // If a future Chatwoot release renumbers these, only this file needs to
-// change — every writer function reads the constants from here.
+// change â€” every writer function reads the constants from here.
 const (
 	// message_type enum
 	messageTypeIncoming = 0
 	messageTypeOutgoing = 1
-	// (activity = 2, template = 3 — unused by the importer)
+	// (activity = 2, template = 3 â€” unused by the importer)
 
-	// message status enum (sent = 0, read = 2, failed = 3 — unused: incoming WA
+	// message status enum (sent = 0, read = 2, failed = 3 â€” unused: incoming WA
 	// history carries no read receipts, so every imported row is "delivered")
 	messageStatusDelivered = 1
 
-	// content_type enum — we only ever write plain text
+	// content_type enum â€” we only ever write plain text
 	contentTypeText = 0
 
 	// conversation status enum
@@ -61,7 +61,7 @@ func contactIdentity(jid, fallbackName string) (phoneNumber, identifier, name st
 		name = utils.ExtractPhoneFromJID(jid)
 	}
 
-	// Groups and @lid JIDs have no phone number — store JID as identifier.
+	// Groups and @lid JIDs have no phone number â€” store JID as identifier.
 	if isGroupJID(jid) || isLidJID(jid) {
 		return "", jid, name
 	}
@@ -71,7 +71,7 @@ func contactIdentity(jid, fallbackName string) (phoneNumber, identifier, name st
 }
 
 // messageTypeForWA returns the Chatwoot message_type enum for a WhatsApp
-// message based on its direction. IsFromMe ⇒ outgoing (agent side in
+// message based on its direction. IsFromMe â‡’ outgoing (agent side in
 // Chatwoot), otherwise incoming (customer side).
 func messageTypeForWA(isFromMe bool) int {
 	if isFromMe {

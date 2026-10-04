@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	domainDevice "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/device"
+	domainDevice "github.com/dresar/gowanew/domains/device"
 )
 
 func TestDeviceServiceInterface(t *testing.T) {

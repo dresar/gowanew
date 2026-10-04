@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	domainSend "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/send"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/validations"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	domainSend "github.com/dresar/gowanew/domains/send"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	pkgError "github.com/dresar/gowanew/pkg/error"
+	"github.com/dresar/gowanew/pkg/utils"
+	"github.com/dresar/gowanew/validations"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
@@ -92,15 +92,15 @@ func forwardStoredContent(message *domainChatStorage.Message) string {
 	}
 	switch message.MediaType {
 	case "image":
-		return "🖼️ Image"
+		return "ðŸ–¼ï¸ Image"
 	case "video", "video_note":
-		return "🎬 Video"
+		return "ðŸŽ¬ Video"
 	case "audio", "ptt":
-		return "🎵 Audio"
+		return "ðŸŽµ Audio"
 	case "document":
-		return "📄 Document"
+		return "ðŸ“„ Document"
 	case "sticker":
-		return "🎨 Sticker"
+		return "ðŸŽ¨ Sticker"
 	default:
 		return message.Content
 	}

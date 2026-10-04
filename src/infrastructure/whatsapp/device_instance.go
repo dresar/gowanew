@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	domainDevice "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/device"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	domainDevice "github.com/dresar/gowanew/domains/device"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/types"
 )

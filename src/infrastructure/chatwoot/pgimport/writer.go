@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	"github.com/dresar/gowanew/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,7 +30,7 @@ func (e txFatalError) Unwrap() error { return e.cause }
 //
 //   - resolving `ChatName` to a real display name (group subject, push
 //     name, or fallback phone) BEFORE calling; the importer will not
-//     look names up. This is deliberate — the SyncService already has a
+//     look names up. This is deliberate â€” the SyncService already has a
 //     whatsmeow client handy, and routing GetGroupInfo through the
 //     importer would duplicate logic from webhook_forward.go.
 //   - sorting `Messages` in chronological order (oldest first), matching
@@ -58,7 +58,7 @@ type ImportResult struct {
 // be retried without producing duplicates.
 //
 // Per-message errors (unexpected NULLs, schema drift, etc.) do NOT abort
-// the whole transaction — each message row is wrapped in a SAVEPOINT so
+// the whole transaction â€” each message row is wrapped in a SAVEPOINT so
 // one bad message only loses itself. This is critical when importing
 // tens of thousands of rows.
 func (i *Importer) ImportChat(ctx context.Context, req ImportChatRequest) (*ImportResult, error) {
@@ -114,7 +114,7 @@ func (i *Importer) ImportChat(ctx context.Context, req ImportChatRequest) (*Impo
 		link, wrote, err := i.insertMessageSavepoint(ctx, tx, convID, contactID, msg, isGroup)
 		switch {
 		case errors.As(err, &txFatalError{}):
-			// Transaction is broken — abort the loop. The caller (syncChatPG)
+			// Transaction is broken â€” abort the loop. The caller (syncChatPG)
 			// counts every message as failed when ImportChat returns an error,
 			// so we deliberately do NOT increment res.MessagesFailed here to
 			// avoid double-counting.
@@ -188,7 +188,7 @@ func (i *Importer) upsertContact(ctx context.Context, tx *sql.Tx, jid, name stri
 		return 0, err
 	}
 
-	// Fallback lookup by phone number for 1:1 chats — matches the REST
+	// Fallback lookup by phone number for 1:1 chats â€” matches the REST
 	// client's FindContactByIdentifier path and avoids creating duplicate
 	// contacts when the live REST sync already landed one without the
 	// gowa_whatsapp_jid attribute.
@@ -242,7 +242,7 @@ func (i *Importer) upsertContact(ctx context.Context, tx *sql.Tx, jid, name stri
 }
 
 // upsertContactInbox links a contact to the configured inbox. Chatwoot
-// requires this row before a conversation can be opened — the inbox-side
+// requires this row before a conversation can be opened â€” the inbox-side
 // `source_id` uniquely identifies the customer within an API channel.
 // Uses ON CONFLICT on the (inbox_id, source_id) UNIQUE index so a race
 // with the live REST path (which may create the same row concurrently)
@@ -263,7 +263,7 @@ func (i *Importer) upsertContactInbox(ctx context.Context, tx *sql.Tx, contactID
 	}
 
 	// Chatwoot's Rails model generates pubsub_token via a callback. In raw
-	// SQL we produce our own — gen_random_uuid() is guaranteed present:
+	// SQL we produce our own â€” gen_random_uuid() is guaranteed present:
 	// Chatwoot's schema.rb calls `enable_extension "pgcrypto"` at the top.
 	var newID int
 	err = tx.QueryRowContext(ctx, `
@@ -303,12 +303,12 @@ func conversationStatusForNew() int {
 // inbound messages, so the two paths agree). When CHATWOOT_REOPEN_CONVERSATION
 // is enabled (the default), a reused *resolved* conversation is flipped back to
 // the configured new-status so a returning customer's history resurfaces in the
-// agent queue — matching the REST path's reopen behavior. (When reopen is
+// agent queue â€” matching the REST path's reopen behavior. (When reopen is
 // disabled the REST path opens a brand-new conversation instead; the importer
 // still reuses the row here to avoid duplicate threads, leaving its status
 // untouched. This is a deliberate, narrow asymmetry: the live REST path opens
 // a fresh thread when reopen is off, while this importer reuses any existing
-// conversation regardless of status and never spawns a second one — keeping a
+// conversation regardless of status and never spawns a second one â€” keeping a
 // backfilled history in a single thread.)
 //
 // We deliberately do NOT supply `display_id`. Chatwoot installs a
@@ -390,7 +390,7 @@ func (i *Importer) findOrCreateConversation(
 
 // insertMessageSavepoint wraps one INSERT in a SAVEPOINT so a single bad
 // row doesn't abort the surrounding chat transaction. Returns (wrote,
-// err) — wrote=false, err=nil means the row was already present and was
+// err) â€” wrote=false, err=nil means the row was already present and was
 // skipped idempotently.
 func (i *Importer) insertMessageSavepoint(
 	ctx context.Context,
@@ -446,7 +446,7 @@ func (i *Importer) insertMessage(
 
 	// Idempotency probe keyed to the inbox: Chatwoot's `index_messages_on_source_id`
 	// is plain (non-unique), but messages imported under the same inbox
-	// share a source_id iff they're the same WhatsApp message — whether
+	// share a source_id iff they're the same WhatsApp message â€” whether
 	// they landed in a different conversation after a resolve/reopen cycle
 	// or not. Inbox-scoped lookup makes replays correctly skip duplicates.
 	var existingID, existingConvID int
@@ -463,7 +463,7 @@ func (i *Importer) insertMessage(
 	}
 
 	content := buildContent(msg, isGroup)
-	// Skip entirely when there is nothing meaningful to show — no body, no
+	// Skip entirely when there is nothing meaningful to show â€” no body, no
 	// media placeholder. Writing blank rows pollutes Chatwoot's UI.
 	if content == "" {
 		return nil, false, nil
@@ -486,13 +486,13 @@ func (i *Importer) insertMessage(
 
 	// senderType/senderID: for incoming messages the sender is the Contact
 	// row we already upserted. For outgoing messages Chatwoot expects a
-	// User (or AgentBot) — the row is rendered as "Unknown sender" if these
+	// User (or AgentBot) â€” the row is rendered as "Unknown sender" if these
 	// stay NULL. We resolve the API-token's owner from `access_tokens` once
 	// at startup
 	// (see Importer.resolveAgent) and stamp every outgoing imported row
 	// with that user. When the lookup failed (no token, missing row,
 	// table unreachable) i.agentUserID is 0 and we deliberately leave the
-	// columns NULL — the message still imports, just without attribution.
+	// columns NULL â€” the message still imports, just without attribution.
 	var senderType sql.NullString
 	var senderID sql.NullInt64
 	if msg.IsFromMe {
@@ -559,7 +559,7 @@ func (i *Importer) buildMessageLink(msg *domainChatStorage.Message, convID, chat
 		IsRead:                       false,
 		// Account scope must be stamped here: pgimport is legacy-only (config id
 		// stays 0) but a zero account id would only match through the legacy-zero
-		// wildcard, which per-device mode disables — and the boot-time backfill
+		// wildcard, which per-device mode disables â€” and the boot-time backfill
 		// only repairs rows existing at startup.
 		ChatwootAccountID: i.accountID,
 	}
@@ -580,7 +580,7 @@ func (i *Importer) touchConversation(ctx context.Context, tx *sql.Tx, convID int
 
 // buildContent computes the message body text for the Chatwoot messages
 // table. Unlike the REST path in sync.go, this deliberately does NOT
-// prepend "[YYYY-MM-DD HH:MM]" — the whole point of the direct-DB
+// prepend "[YYYY-MM-DD HH:MM]" â€” the whole point of the direct-DB
 // importer is that we can preserve real timestamps on the row itself, so
 // polluting the body with a string copy is unnecessary.
 //
@@ -598,7 +598,7 @@ func buildContent(msg *domainChatStorage.Message, isGroup bool) string {
 	}
 
 	if isGroup && !msg.IsFromMe && msg.Sender != "" {
-		// The sender label is the JID user portion — a phone number for normal
+		// The sender label is the JID user portion â€” a phone number for normal
 		// users, an @lid identifier for privacy-masked senders. This matches the
 		// REST path (sync.go:syncMessage), which labels group senders the same way.
 		senderName := utils.ExtractPhoneFromJID(msg.Sender)

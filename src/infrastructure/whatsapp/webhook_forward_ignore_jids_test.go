@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 )
 
 // ignoreJidPayload builds a webhook envelope with the nested inner payload where chat_id/from
@@ -81,7 +81,7 @@ func TestWebhookIgnoreJID_EmptyListForwardsAll(t *testing.T) {
 }
 
 func TestWebhookIgnoreJID_EventWithoutInnerPayloadForwards(t *testing.T) {
-	// Envelope with no nested "payload" map (no JID to match) must keep forwarding —
+	// Envelope with no nested "payload" map (no JID to match) must keep forwarding â€”
 	// the filter must never drop events that carry no chat/sender JID.
 	payload := map[string]any{"event": "qr", "device_id": "org_1", "code": "abc"}
 	if !runIgnoreJidForward(t, []string{"@g.us"}, "qr", payload) {

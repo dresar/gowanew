@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
+	pkgError "github.com/dresar/gowanew/pkg/error"
 )
 
 // ValidateDeviceID ensures a device id was provided before any logout/remove work.

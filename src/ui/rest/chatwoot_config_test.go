@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatwoot"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/ui/rest/middleware"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	"github.com/dresar/gowanew/infrastructure/chatwoot"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	"github.com/dresar/gowanew/ui/rest/middleware"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -250,7 +250,7 @@ func TestChatwootConfigListEndpoint(t *testing.T) {
 }
 
 // TestChatwootConfigMaskedTokenRoundTrip proves a client that echoes the masked
-// token from GET back into PUT keeps the stored secret — the mask must never be
+// token from GET back into PUT keeps the stored secret â€” the mask must never be
 // stored as the credential itself.
 func TestChatwootConfigMaskedTokenRoundTrip(t *testing.T) {
 	store := newFakeConfigStore()

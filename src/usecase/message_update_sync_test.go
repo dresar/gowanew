@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	domainMessage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/message"
+	domainMessage "github.com/dresar/gowanew/domains/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,7 +31,7 @@ func TestUpdateMessageSyncsEditToChatStorage(t *testing.T) {
 }
 
 // The edit history row is what makes an edit auditable after the fact, and the
-// inbound path already writes one — the API path must not be the odd one out.
+// inbound path already writes one â€” the API path must not be the odd one out.
 func TestUpdateMessageRecordsEditHistory(t *testing.T) {
 	service, repo, ctx := newMessageActionTestService(t, nil)
 

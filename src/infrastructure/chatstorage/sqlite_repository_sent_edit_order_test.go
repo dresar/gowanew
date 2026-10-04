@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -60,7 +60,7 @@ func editEvent(id, newContent string, at time.Time) *events.Message {
 }
 
 // The race: the edit lands first, then the delayed original store arrives. The
-// original content must NOT come back — that is the stale quote all over again.
+// original content must NOT come back â€” that is the stale quote all over again.
 func TestDelayedSentStoreDoesNotOverwriteAnEarlierEdit(t *testing.T) {
 	repo, ctx := orderTestRepo(t)
 	now := time.Now().UTC()
@@ -113,9 +113,9 @@ func TestSentStoreWritesContentWhenNoEditExists(t *testing.T) {
 	assert.Equal(t, "second", stored.Content)
 }
 
-// Interleaves the two writers repeatedly. The real guarantee is structural — the
+// Interleaves the two writers repeatedly. The real guarantee is structural â€” the
 // edit check is an EXISTS inside the UPDATE, so there is no window between check
-// and write — and this exercises it under actual contention rather than relying
+// and write â€” and this exercises it under actual contention rather than relying
 // on a hand-picked order. Content must never come back as the original.
 func TestConcurrentSentStoreAndEditNeverYieldsOriginalContent(t *testing.T) {
 	const rounds = 40
@@ -150,7 +150,7 @@ func TestConcurrentSentStoreAndEditNeverYieldsOriginalContent(t *testing.T) {
 			continue // both writers failed to land a row; nothing to assert
 		}
 		// The edit may or may not have won the ordering, but once it has been
-		// RECORDED the stored content must reflect it — never the original.
+		// RECORDED the stored content must reflect it â€” never the original.
 		edits, err := repo.GetMessageEdits(id, orderDevice)
 		require.NoError(t, err)
 		if len(edits) > 0 {

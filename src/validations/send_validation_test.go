@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"testing"
 
-	domainMessage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/message"
-	domainSend "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/send"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
+	domainMessage "github.com/dresar/gowanew/domains/message"
+	domainSend "github.com/dresar/gowanew/domains/send"
+	pkgError "github.com/dresar/gowanew/pkg/error"
 	"github.com/stretchr/testify/assert"
 )
 

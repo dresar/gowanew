@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 )
 
 type mergeDelivery struct {
@@ -180,7 +180,7 @@ func TestWebhookDeviceMerge_SharedURLStillDeliversWhenDeviceFilterRejects(t *tes
 // Both legs share the caller's deadline, and a single endpoint can spend seconds in
 // retry backoff. Running them sequentially let a slow device endpoint consume the whole
 // budget and silently starve the global hub, which is the failure this flag exists to
-// prevent — so the global leg must not wait on the device leg.
+// prevent â€” so the global leg must not wait on the device leg.
 func TestWebhookDeviceMerge_SlowDeviceLegDoesNotStarveGlobalLeg(t *testing.T) {
 	originalWebhooks := config.WhatsappWebhook
 	originalEvents := config.WhatsappWebhookEvents

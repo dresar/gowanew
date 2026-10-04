@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
+	"github.com/dresar/gowanew/config"
 )
 
 func TestPerDeviceSyncServicesAreDistinct(t *testing.T) {
@@ -50,7 +50,7 @@ func TestSyncServiceRebuiltOnClientChange(t *testing.T) {
 	orig := GetSyncServiceForDevice("devRot", NewClientFromConfig("https://a.example.com", "old-token", 1, 1), nil, false, 1)
 
 	// An equivalent client (same destination + credentials, different pointer)
-	// must reuse the cached service — identity is by value, not pointer.
+	// must reuse the cached service â€” identity is by value, not pointer.
 	same := GetSyncServiceForDevice("devRot", NewClientFromConfig("https://a.example.com", "old-token", 1, 1), nil, false, 1)
 	if same != orig {
 		t.Fatal("equivalent client should reuse the cached sync service")

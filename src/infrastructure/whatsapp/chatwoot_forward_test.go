@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatwoot"
+	"github.com/dresar/gowanew/config"
+	"github.com/dresar/gowanew/infrastructure/chatwoot"
 )
 
 // TestSyncPayloadToChatwootFailFast verifies the forward path skips silently
@@ -395,21 +395,21 @@ func TestBuildReactionChatwootContent(t *testing.T) {
 			// nests it under that message's bubble.
 			name: "reaction with sender name and target id",
 			payload: map[string]any{
-				"reaction":           "👍",
+				"reaction":           "ðŸ‘",
 				"reacted_message_id": "wamid-123",
 			},
 			fromName: "Alice",
-			expected: "Alice reacted 👍",
+			expected: "Alice reacted ðŸ‘",
 		},
 		{
 			name: "reaction falls back to phone",
 			payload: map[string]any{
-				"reaction":           "🔥",
+				"reaction":           "ðŸ”¥",
 				"reacted_message_id": "wamid-456",
 				"from":               "628123456789@s.whatsapp.net",
 			},
 			fromName: "",
-			expected: "628123456789 reacted 🔥",
+			expected: "628123456789 reacted ðŸ”¥",
 		},
 		{
 			name: "reaction removal",
@@ -423,20 +423,20 @@ func TestBuildReactionChatwootContent(t *testing.T) {
 		{
 			name: "reaction falls back to sender jid when pushname missing",
 			payload: map[string]any{
-				"reaction":           "😂",
+				"reaction":           "ðŸ˜‚",
 				"reacted_message_id": "wamid-999",
 				"from":               "628777000111@s.whatsapp.net",
 			},
 			fromName: "",
-			expected: "628777000111 reacted 😂",
+			expected: "628777000111 reacted ðŸ˜‚",
 		},
 		{
 			name: "missing target id still produces readable text",
 			payload: map[string]any{
-				"reaction": "❤️",
+				"reaction": "â¤ï¸",
 			},
 			fromName: "Carol",
-			expected: "Carol reacted ❤️",
+			expected: "Carol reacted â¤ï¸",
 		},
 	}
 

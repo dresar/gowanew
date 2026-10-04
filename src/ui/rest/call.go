@@ -1,9 +1,9 @@
 package rest
 
 import (
-	domainCall "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/call"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	domainCall "github.com/dresar/gowanew/domains/call"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	"github.com/dresar/gowanew/pkg/utils"
 	"github.com/gofiber/fiber/v3"
 )
 

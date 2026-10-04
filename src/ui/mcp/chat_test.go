@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	domainChat "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chat"
-	domainUser "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/user"
+	domainChat "github.com/dresar/gowanew/domains/chat"
+	domainUser "github.com/dresar/gowanew/domains/user"
 	mcpg "github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

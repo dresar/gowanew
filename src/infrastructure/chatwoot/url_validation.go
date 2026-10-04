@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
+	"github.com/dresar/gowanew/config"
 )
 
 // maxChatwootURLLen caps the stored Chatwoot URL length.
@@ -86,7 +86,7 @@ func isDisallowedSSRFIP(ip net.IP) bool {
 
 // ValidateChatwootURL canonicalizes the URL and rejects it on SSRF grounds.
 //
-// When config.ChatwootAllowedHosts is set, the host MUST match the allowlist —
+// When config.ChatwootAllowedHosts is set, the host MUST match the allowlist â€”
 // and a matching host is trusted (the operator's explicit escape hatch for a
 // self-hosted Chatwoot on a private network).
 //

@@ -4,9 +4,9 @@ import (
 	"net/url"
 	"strings"
 
-	domainChat "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chat"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	domainChat "github.com/dresar/gowanew/domains/chat"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	"github.com/dresar/gowanew/pkg/utils"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -219,7 +219,7 @@ func (controller *Chat) RequestChatHistory(c fiber.Ctx) error {
 			Results: nil,
 		})
 	}
-	// Parse JSON body (optional — count defaults when the body is empty).
+	// Parse JSON body (optional â€” count defaults when the body is empty).
 	// Fiber v3.4.0's Bind().Body() picks a binder from Content-Type and
 	// returns ErrUnprocessableEntity when the body is empty and no
 	// Content-Type is set, so binding is skipped for an empty body.

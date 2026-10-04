@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatwoot"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	"github.com/dresar/gowanew/infrastructure/chatwoot"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -86,7 +86,7 @@ func TestHandleDeviceWebhookValidatesAccountInbox(t *testing.T) {
 
 // TestProcessChatwootWebhookDropsUnroutablePayload proves the fail-fast is
 // enforced at delivery: in per-device mode an unmapped conversation must be
-// acknowledged WITHOUT resolving a device — an empty DeviceID would otherwise
+// acknowledged WITHOUT resolving a device â€” an empty DeviceID would otherwise
 // fall through to the default device and send from the wrong WhatsApp account.
 func TestProcessChatwootWebhookDropsUnroutablePayload(t *testing.T) {
 	chatwoot.InitClientRegistry(nil)
@@ -103,7 +103,7 @@ func TestProcessChatwootWebhookDropsUnroutablePayload(t *testing.T) {
 	}
 
 	// End-to-end: the webhook handler must return 200 without touching the
-	// device manager (nil here — a delivery attempt would resolve the default
+	// device manager (nil here â€” a delivery attempt would resolve the default
 	// device and panic on the nil usecases before responding).
 	app := fiber.New()
 	app.Post("/chatwoot/webhook", handler.HandleWebhook)

@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	domainApp "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/app"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	domainDevice "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/device"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/ui/rest/middleware"
+	domainApp "github.com/dresar/gowanew/domains/app"
+	"github.com/dresar/gowanew/domains/chatstorage"
+	domainDevice "github.com/dresar/gowanew/domains/device"
+	"github.com/dresar/gowanew/ui/rest/middleware"
 	"github.com/gofiber/fiber/v3"
 )
 

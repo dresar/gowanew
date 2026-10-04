@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"strings"
 
-	domainApp "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/app"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	domainDevice "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/device"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/ui/websocket"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/validations"
+	domainApp "github.com/dresar/gowanew/domains/app"
+	"github.com/dresar/gowanew/domains/chatstorage"
+	domainDevice "github.com/dresar/gowanew/domains/device"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	pkgError "github.com/dresar/gowanew/pkg/error"
+	"github.com/dresar/gowanew/ui/websocket"
+	"github.com/dresar/gowanew/validations"
 	"github.com/sirupsen/logrus"
 )
 

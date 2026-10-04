@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	domainUser "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/user"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/validations"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	domainUser "github.com/dresar/gowanew/domains/user"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	pkgError "github.com/dresar/gowanew/pkg/error"
+	"github.com/dresar/gowanew/pkg/utils"
+	"github.com/dresar/gowanew/validations"
 	"github.com/disintegration/imaging"
 	"github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow"
@@ -186,13 +186,13 @@ func (service serviceUser) Avatar(ctx context.Context, request domainUser.Avatar
 
 // MyListGroups returns all groups the user has joined.
 //
-// ⚠️ KNOWN LIMITATION: This endpoint returns a maximum of 500 groups due to a WhatsApp protocol limitation.
+// âš ï¸ KNOWN LIMITATION: This endpoint returns a maximum of 500 groups due to a WhatsApp protocol limitation.
 // The underlying whatsmeow library's GetJoinedGroups() function sends a single "participating" IQ query
 // to WhatsApp servers, which enforces this limit server-side. This is not a bug - it's a constraint
 // imposed by WhatsApp's multi-device protocol. Pagination is not supported by WhatsApp for this query.
 //
 // For more details, see: https://github.com/tulir/whatsmeow/blob/main/group.go
-// Related issue: https://github.com/aldinokemal/go-whatsapp-web-multidevice/issues/553
+// Related issue: https://github.com/dresar/gowanew/issues/553
 func (service serviceUser) MyListGroups(ctx context.Context) (response domainUser.MyListGroupsResponse, err error) {
 	client := whatsapp.ClientFromContext(ctx)
 	if client == nil {

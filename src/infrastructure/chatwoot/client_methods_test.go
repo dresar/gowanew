@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
+	"github.com/dresar/gowanew/config"
 )
 
 // newTestClient builds a Client pointed at the given test server. Every
@@ -161,7 +161,7 @@ func TestFindContactByIdentifier_PhoneMatch(t *testing.T) {
 
 func TestFindContactByIdentifier_PhoneNoMatch(t *testing.T) {
 	// When the search returns contacts but none match the normalized phone,
-	// the method returns (nil, nil) — not found is not an error.
+	// the method returns (nil, nil) â€” not found is not an error.
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(t, w, http.StatusOK, map[string]any{
 			"payload": []Contact{{ID: 1, PhoneNumber: "+6280000000000"}},
@@ -452,7 +452,7 @@ func TestCreateContact_Non2xx(t *testing.T) {
 
 func TestCreateContact_ZeroIDOrUndecodable(t *testing.T) {
 	// A 2xx response whose body yields no valid (non-zero) ID is a hard
-	// failure — there is nothing usable to return. This covers both a body
+	// failure â€” there is nothing usable to return. This covers both a body
 	// with id:0 and a body that does not unmarshal into any contact shape.
 	tests := []struct {
 		name string
@@ -744,7 +744,7 @@ func TestFindOrCreateConversation_CreatesWhenNotFound(t *testing.T) {
 func TestFindOrCreateConversation_SwallowsFindErrorThenCreates(t *testing.T) {
 	// Listing conversations failing is logged but NOT propagated: the method
 	// still proceeds to create. This codifies the current swallow-and-create
-	// behavior — a find error must not block conversation creation.
+	// behavior â€” a find error must not block conversation creation.
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.Method == http.MethodGet:
@@ -1187,7 +1187,7 @@ func TestEchoDedup_MapBehavior(t *testing.T) {
 	// A real id, once marked, is recognized as ours. We use a large, fixed
 	// id unlikely to collide with anything (the map is package-global and
 	// shared, but this exact value is only touched here). IsMessageSentByUs
-	// does not delete on read, so it stays true on a second check — Chatwoot
+	// does not delete on read, so it stays true on a second check â€” Chatwoot
 	// fires multiple webhook events for one message.
 	const id = 987654321
 	if IsMessageSentByUs(acc, id) {

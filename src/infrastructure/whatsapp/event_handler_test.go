@@ -3,7 +3,7 @@ package whatsapp
 import (
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
+	"github.com/dresar/gowanew/config"
 	"go.mau.fi/whatsmeow/types"
 )
 

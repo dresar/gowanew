@@ -8,12 +8,12 @@ import (
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/types"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainGroup "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/group"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/validations"
+	"github.com/dresar/gowanew/config"
+	domainGroup "github.com/dresar/gowanew/domains/group"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	pkgError "github.com/dresar/gowanew/pkg/error"
+	"github.com/dresar/gowanew/pkg/utils"
+	"github.com/dresar/gowanew/validations"
 )
 
 type serviceGroup struct{}
@@ -546,7 +546,7 @@ func groupParticipantPhoneJID(ctx context.Context, client *whatsmeow.Client, p t
 }
 
 // wireParticipantLookupAndPhone returns the JID to use for contact/user-info lookups and the phone user
-// string for API output, using a single LID→PN resolution per participant.
+// string for API output, using a single LIDâ†’PN resolution per participant.
 func wireParticipantLookupAndPhone(ctx context.Context, client *whatsmeow.Client, wire types.JID) (lookupJID types.JID, phoneDigits string) {
 	resolved := utils.ResolveLIDToPhone(ctx, wire, client)
 	phoneDigits = resolved.User

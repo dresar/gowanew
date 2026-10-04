@@ -7,14 +7,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainApp "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/app"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	domainMessage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/message"
-	domainSend "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/send"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatwoot"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	"github.com/dresar/gowanew/config"
+	domainApp "github.com/dresar/gowanew/domains/app"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	domainMessage "github.com/dresar/gowanew/domains/message"
+	domainSend "github.com/dresar/gowanew/domains/send"
+	"github.com/dresar/gowanew/infrastructure/chatwoot"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	"github.com/dresar/gowanew/pkg/utils"
 	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
 )
@@ -45,7 +45,7 @@ func NewChatwootHandler(
 
 // composeOutgoingText prepares a Chatwoot agent reply for WhatsApp delivery:
 // it translates Chatwoot/GFM markdown (**bold**, *italic*, ~~strike~~) into
-// WhatsApp's syntax, and — when CHATWOOT_SIGN_MSG is enabled — prefixes the
+// WhatsApp's syntax, and â€” when CHATWOOT_SIGN_MSG is enabled â€” prefixes the
 // agent's name (joined by CHATWOOT_SIGN_DELIMITER, with literal "\n" escapes
 // expanded). Returns "" when the reply has no text body.
 func composeOutgoingText(payload chatwoot.WebhookPayload) string {
@@ -65,7 +65,7 @@ func composeOutgoingText(payload chatwoot.WebhookPayload) string {
 // webhook_forward.go), so they must never be sent back to WhatsApp. This guard
 // is timing-independent: the source_id is set in the create request itself,
 // unlike the in-memory sent-message cache which is only populated after the
-// create call returns — so it closes the race where Chatwoot delivers the
+// create call returns â€” so it closes the race where Chatwoot delivers the
 // message_created webhook before that cache entry exists.
 func isEchoOfForwardedMessage(payload chatwoot.WebhookPayload) bool {
 	return strings.HasPrefix(payload.SourceID, "WAID:")
@@ -144,7 +144,7 @@ func chatwootLinkChatJID(destination string) string {
 //
 // Stripping the suffix for every non-group JID (the previous behavior) turned
 // an @lid destination into a bare LID id, which ParseJID then misrouted into
-// the @s.whatsapp.net space — never reaching ResolveLIDToPhone and breaking
+// the @s.whatsapp.net space â€” never reaching ResolveLIDToPhone and breaking
 // every agent reply to an @lid contact.
 func resolveSendDestination(destination string) (sendDestination string, isGroup bool) {
 	isGroup = utils.IsGroupJID(destination)
@@ -181,7 +181,7 @@ type chatwootWebhookRoute struct {
 	// Delivery must be dropped (unless a forced per-device route overrides it):
 	// an empty DeviceID would otherwise fall through to
 	// DeviceManager.ResolveDevice's default-device fallback and send the reply
-	// from an arbitrary device — the cross-account mis-delivery fail-fast exists
+	// from an arbitrary device â€” the cross-account mis-delivery fail-fast exists
 	// to prevent.
 	Unroutable bool
 }
@@ -206,7 +206,7 @@ func chatwootContactAttrString(attrs map[string]any, key string) string {
 //  1. Account-scoped conversation link (handles replies to existing conversations).
 //  2. Contact custom attribute gowa_device_id (explicit operator override).
 //  3. Inbox+account reverse map (agent-initiated conversations).
-//  4. Env config.ChatwootDeviceID — ONLY while no per-device config rows exist
+//  4. Env config.ChatwootDeviceID â€” ONLY while no per-device config rows exist
 //     (legacy single-device mode). Otherwise the device is left empty so an
 //     unmapped conversation fails-fast instead of misrouting to the wrong inbox.
 func (h *ChatwootHandler) resolveChatwootWebhookRoute(payload chatwoot.WebhookPayload, forced *chatwootWebhookRoute) chatwootWebhookRoute {
@@ -223,8 +223,8 @@ func (h *ChatwootHandler) resolveChatwootWebhookRoute(payload chatwoot.WebhookPa
 
 	// 1) Account-scoped conversation link. On the per-device endpoint the link
 	// must additionally belong to the device's own config: two separate Chatwoot
-	// servers can collide on (conversation_id, account_id) — fresh installs all
-	// start at account 1, conversation 1 — and an unscoped match would take the
+	// servers can collide on (conversation_id, account_id) â€” fresh installs all
+	// start at account 1, conversation 1 â€” and an unscoped match would take the
 	// destination chat JID from the other server's conversation.
 	if h != nil && h.ChatStorageRepo != nil && payload.Conversation.ID != 0 {
 		var scopeConfigID int64
@@ -374,7 +374,7 @@ func (h *ChatwootHandler) HandleDeviceWebhook(c fiber.Ctx) error {
 	}
 
 	// Resolve the path device id against known devices (it may be an alias or a
-	// JID). Unknown ids are acknowledged without processing — this endpoint can
+	// JID). Unknown ids are acknowledged without processing â€” this endpoint can
 	// be reached unauthenticated, so it must neither leak which device ids exist
 	// nor grow the client-registry cache with arbitrary identifiers.
 	deviceID := pathDeviceID(c)
@@ -484,7 +484,7 @@ func (h *ChatwootHandler) deliverChatwootReply(c fiber.Ctx, payload chatwoot.Web
 	// Build the device-bearing context once and reuse it for the send
 	// operations below. The send usecases resolve the WhatsApp client from this
 	// context (whatsapp.ClientFromContext), so without it the reply goes out
-	// from the global default device instead of the routed one — a cross-account
+	// from the global default device instead of the routed one â€” a cross-account
 	// mis-delivery in multi-device deployments. It is also stored on the Fiber
 	// request context because the read/revoke paths read c.Context().
 	ctx := whatsapp.ContextWithDevice(c.Context(), instance)
@@ -516,7 +516,7 @@ func (h *ChatwootHandler) deliverChatwootReply(c fiber.Ctx, payload chatwoot.Web
 		sentAny := false
 		for i, attachment := range payload.Attachments {
 			// The caption belongs to the message as a whole, so it rides on the
-			// first attachment only — otherwise a multi-file reply repeats the
+			// first attachment only â€” otherwise a multi-file reply repeats the
 			// same caption under every file.
 			caption := ""
 			if i == 0 {
@@ -840,7 +840,7 @@ func (h *ChatwootHandler) SyncHistory(c fiber.Ctx) error {
 	if storageDeviceID == "" {
 		// resolvedID may alias the request buffer (it derives from the request
 		// body/params), and this id outlives the request as the sync progress-map
-		// key — copy it so the key doesn't mutate when fasthttp recycles the buffer.
+		// key â€” copy it so the key doesn't mutate when fasthttp recycles the buffer.
 		storageDeviceID = strings.Clone(resolvedID)
 	}
 

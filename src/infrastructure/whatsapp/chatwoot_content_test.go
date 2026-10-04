@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	"github.com/dresar/gowanew/config"
+	"github.com/dresar/gowanew/pkg/utils"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"google.golang.org/protobuf/proto"
 )
@@ -14,7 +14,7 @@ import (
 // --- Fakes implementing the structural interfaces extractStructuredMessageContent
 // matches against. The production code asserts payload values against anonymous
 // interfaces (interface{ GetDegreesLatitude()... }), so a test type only needs the
-// matching method set — it does NOT need to be the real protobuf type. Each fake is
+// matching method set â€” it does NOT need to be the real protobuf type. Each fake is
 // given a unique name (ccTest* prefix) to avoid colliding with helpers in sibling
 // test files in this package.
 
@@ -31,7 +31,7 @@ func (l ccTestLocation) GetDegreesLongitude() float64 { return l.long }
 func (l ccTestLocation) GetName() string              { return l.name }
 
 // ccTestLiveLocation satisfies the live_location interface, which deliberately
-// lacks GetName — exercising the separate live-location branch.
+// lacks GetName â€” exercising the separate live-location branch.
 type ccTestLiveLocation struct {
 	lat  float64
 	long float64
@@ -51,7 +51,7 @@ type ccTestOrder struct{ title string }
 func (o ccTestOrder) GetOrderTitle() string { return o.title }
 
 // ccTestContactIface satisfies the GetDisplayName/GetVcard interface branch in
-// extractContactDetails — the path the real waE2E.ContactMessage takes.
+// extractContactDetails â€” the path the real waE2E.ContactMessage takes.
 type ccTestContactIface struct {
 	name  string
 	vcard string
@@ -72,7 +72,7 @@ func vcardWithTel(t *testing.T, phone string) string {
 // security/UX sensitive: a wrong identifier silently merges or splits conversations
 // in the agent inbox, and a missed system-JID guard floods Chatwoot with status
 // noise. Every case calls with context.Background(), where getGroupName has no
-// WhatsApp client and therefore returns "" — exercising the group-name fallback.
+// WhatsApp client and therefore returns "" â€” exercising the group-name fallback.
 func TestExtractChatwootContactInfo(t *testing.T) {
 	ctx := context.Background()
 
@@ -98,7 +98,7 @@ func TestExtractChatwootContactInfo(t *testing.T) {
 
 	t.Run("status broadcast chat_id is skipped", func(t *testing.T) {
 		// status@broadcast in chat_id must short-circuit even though 'from' is a
-		// real user — relaying status posts would spawn a noise "Status" contact.
+		// real user â€” relaying status posts would spawn a noise "Status" contact.
 		_, err := extractChatwootContactInfo(ctx, map[string]any{
 			"from":    "628111@s.whatsapp.net",
 			"chat_id": "status@broadcast",
@@ -109,7 +109,7 @@ func TestExtractChatwootContactInfo(t *testing.T) {
 	})
 
 	t.Run("newsletter chat_id is skipped", func(t *testing.T) {
-		// Channel (newsletter) feeds are broadcast-only — no conversation for
+		// Channel (newsletter) feeds are broadcast-only â€” no conversation for
 		// an agent, and the channel id is not a phone number, so relaying one
 		// would 422 at Chatwoot contact creation ("Phone number should be in
 		// e164 format").
@@ -227,7 +227,7 @@ func TestExtractChatwootContactInfo(t *testing.T) {
 	})
 
 	t.Run("inbound 1:1 falls back to identifier when from_name empty", func(t *testing.T) {
-		// No pushname → Name defaults to the identifier so the inbox isn't blank.
+		// No pushname â†’ Name defaults to the identifier so the inbox isn't blank.
 		info, err := extractChatwootContactInfo(ctx, map[string]any{
 			"from":    "628123456789@s.whatsapp.net",
 			"chat_id": "628123456789@s.whatsapp.net",
@@ -372,7 +372,7 @@ func TestBuildChatwootMessageContent(t *testing.T) {
 	})
 
 	t.Run("empty body falls back to structured content", func(t *testing.T) {
-		// An empty body but a structured location → the structured extractor fills
+		// An empty body but a structured location â†’ the structured extractor fills
 		// the content instead of leaving it blank.
 		content, _ := buildChatwootMessageContent(map[string]any{
 			"body":     "",
@@ -405,7 +405,7 @@ func TestBuildChatwootMessageContent(t *testing.T) {
 	})
 
 	t.Run("group with empty fromName and no from does not prefix", func(t *testing.T) {
-		// Guard: nothing to attribute → no stray ": " prefix.
+		// Guard: nothing to attribute â†’ no stray ": " prefix.
 		content, _ := buildChatwootMessageContent(map[string]any{"body": "hi"}, true, "")
 		if content != "hi" {
 			t.Fatalf("expected unprefixed 'hi', got %q", content)
@@ -439,7 +439,7 @@ func TestBuildChatwootMessageContent(t *testing.T) {
 			}
 			// With an attachment present, the placeholder is NOT applied (that only
 			// fires when there is neither content nor any attachment). For a
-			// non-group media-only message the content stays empty — Chatwoot shows
+			// non-group media-only message the content stays empty â€” Chatwoot shows
 			// just the file.
 			if content != "" {
 				t.Fatalf("expected empty content for media-only %s, got %q", field, content)
@@ -536,7 +536,7 @@ func TestBuildChatwootMessageContent(t *testing.T) {
 
 	t.Run("interactive_media []string yields one attachment per carousel card", func(t *testing.T) {
 		// Live path shape: collectInteractiveMedia (event_message.go) returns
-		// []string directly. Must NOT collide with the singular mediaFields —
+		// []string directly. Must NOT collide with the singular mediaFields â€”
 		// a carousel can have media on every card, which the singular
 		// "image"/"video"/"document" keys can't represent without one
 		// overwriting another.
@@ -555,7 +555,7 @@ func TestBuildChatwootMessageContent(t *testing.T) {
 	t.Run("interactive_media []any (post-retry JSON shape) yields attachments", func(t *testing.T) {
 		// A failed live forward is re-marshaled through JSON for the retry
 		// queue (enqueueChatwootForwardRetry/replayChatwootForwardEvent),
-		// which turns []string into []any of strings — must still work.
+		// which turns []string into []any of strings â€” must still work.
 		_, atts := buildChatwootMessageContent(map[string]any{
 			"interactive_media": []any{"/tmp/wa/card1.jpg", "/tmp/wa/card2.jpg"},
 		}, false, "")
@@ -579,7 +579,7 @@ func TestBuildChatwootMessageContent(t *testing.T) {
 // locations, lists, orders) into a human-readable line, so each branch's exact
 // output is part of the agent-facing contract. Note: the contact and contacts-array
 // happy paths via webhookContactPayload are already covered in webhook_forward_test.go
-// — here we focus on the map/interface/empty/default permutations and the
+// â€” here we focus on the map/interface/empty/default permutations and the
 // location/list/order branches.
 func TestExtractStructuredMessageContentVariants(t *testing.T) {
 	t.Run("contact map with displayName and phone", func(t *testing.T) {
@@ -595,7 +595,7 @@ func TestExtractStructuredMessageContentVariants(t *testing.T) {
 	})
 
 	t.Run("contact map with only vcard extracts phone", func(t *testing.T) {
-		// No phone_number key → fall back to parsing the vCard's TEL field.
+		// No phone_number key â†’ fall back to parsing the vCard's TEL field.
 		got := extractStructuredMessageContent(map[string]any{
 			"contact": map[string]any{
 				"displayName": "Eve",
@@ -653,7 +653,7 @@ func TestExtractStructuredMessageContentVariants(t *testing.T) {
 	})
 
 	t.Run("contacts_array []any first element unusable yields Contacts shared", func(t *testing.T) {
-		// First element has no extractable name/phone → fall back to sentinel.
+		// First element has no extractable name/phone â†’ fall back to sentinel.
 		got := extractStructuredMessageContent(map[string]any{
 			"contacts_array": []any{map[string]any{"unrelated": "x"}},
 		})
@@ -677,7 +677,7 @@ func TestExtractStructuredMessageContentVariants(t *testing.T) {
 	})
 
 	t.Run("contacts_array pointer slice all nil yields Contacts shared", func(t *testing.T) {
-		// Every pointer nil → normalized slice empty → sentinel.
+		// Every pointer nil â†’ normalized slice empty â†’ sentinel.
 		got := extractStructuredMessageContent(map[string]any{
 			"contacts_array": []*webhookContactPayload{nil, nil},
 		})
@@ -706,7 +706,7 @@ func TestExtractStructuredMessageContentVariants(t *testing.T) {
 	})
 
 	t.Run("location without name omits the label", func(t *testing.T) {
-		// Empty name → the coordinates-only form (no "Name (" wrapper).
+		// Empty name â†’ the coordinates-only form (no "Name (" wrapper).
 		got := extractStructuredMessageContent(map[string]any{
 			"location": ccTestLocation{lat: -6.2, long: 106.8},
 		})
@@ -754,7 +754,7 @@ func TestExtractStructuredMessageContentVariants(t *testing.T) {
 	})
 
 	t.Run("list with empty title yields generic", func(t *testing.T) {
-		// Implements the interface but title is empty → generic "List message".
+		// Implements the interface but title is empty â†’ generic "List message".
 		got := extractStructuredMessageContent(map[string]any{
 			"list": ccTestList{title: ""},
 		})
@@ -812,7 +812,7 @@ func TestExtractStructuredMessageContentVariants(t *testing.T) {
 	})
 
 	t.Run("empty payload yields empty string", func(t *testing.T) {
-		// No recognized structured key → "" so the caller falls back to its own
+		// No recognized structured key â†’ "" so the caller falls back to its own
 		// placeholder logic.
 		if got := extractStructuredMessageContent(map[string]any{}); got != "" {
 			t.Fatalf("expected empty string, got %q", got)
@@ -904,7 +904,7 @@ func TestExtractContactDetails(t *testing.T) {
 	})
 
 	t.Run("empty map is not ok", func(t *testing.T) {
-		// Neither name nor phone → ok=false.
+		// Neither name nor phone â†’ ok=false.
 		_, _, ok := extractContactDetails(map[string]any{})
 		if ok {
 			t.Fatal("expected ok=false for empty map")
@@ -930,7 +930,7 @@ func TestExtractContactDetails(t *testing.T) {
 }
 
 // TestStructuredContactsArraySummary pins the small helper that summarizes a typed
-// contacts slice — empty slices must not index out of bounds.
+// contacts slice â€” empty slices must not index out of bounds.
 func TestStructuredContactsArraySummary(t *testing.T) {
 	t.Run("empty slice yields Contacts shared", func(t *testing.T) {
 		if got := structuredContactsArraySummary(nil); got != "Contacts shared" {
@@ -989,7 +989,7 @@ func TestIsEventWhitelisted(t *testing.T) {
 	})
 
 	t.Run("empty whitelist matches nothing here", func(t *testing.T) {
-		// isEventWhitelisted itself does NOT treat an empty list as allow-all — that
+		// isEventWhitelisted itself does NOT treat an empty list as allow-all â€” that
 		// allow-all behavior lives in the callers. With no entries the loop never
 		// matches.
 		config.WhatsappWebhookEvents = nil
@@ -1023,7 +1023,7 @@ func TestGroupNameCache(t *testing.T) {
 
 	t.Run("empty cached name still reports present", func(t *testing.T) {
 		// Storing an empty name is meaningful (it records "we tried and got nothing")
-		// — load must still return ok=true so callers don't re-fetch.
+		// â€” load must still return ok=true so callers don't re-fetch.
 		jid := "cachetest-empty@g.us"
 		setCachedGroupName(jid, "")
 		name, ok := getCachedGroupName(jid)
@@ -1035,7 +1035,7 @@ func TestGroupNameCache(t *testing.T) {
 
 // TestFormatInteractiveMessageSummary pins the text rendering of
 // InteractiveMessage (business/Cloud API messages with native buttons), which
-// can't be exercised end-to-end without a real Business-API sender — these
+// can't be exercised end-to-end without a real Business-API sender â€” these
 // build the real protobuf type directly instead of relying on a live message.
 func TestFormatInteractiveMessageSummary(t *testing.T) {
 	t.Run("header, body, footer, and cta_url button", func(t *testing.T) {
@@ -1054,7 +1054,7 @@ func TestFormatInteractiveMessageSummary(t *testing.T) {
 				},
 			},
 		}
-		want := "Promo\nConfira nossa oferta\nEquipe Vendas\n🔗 Visitar site: https://example.com"
+		want := "Promo\nConfira nossa oferta\nEquipe Vendas\nðŸ”— Visitar site: https://example.com"
 		if got := utils.FormatInteractiveMessageSummary(im); got != want {
 			t.Fatalf("got %q, want %q", got, want)
 		}
@@ -1073,7 +1073,7 @@ func TestFormatInteractiveMessageSummary(t *testing.T) {
 				},
 			},
 		}
-		want := "📞 Ligar agora: +5511999999999"
+		want := "ðŸ“ž Ligar agora: +5511999999999"
 		if got := utils.FormatInteractiveMessageSummary(im); got != want {
 			t.Fatalf("got %q, want %q", got, want)
 		}
@@ -1081,7 +1081,7 @@ func TestFormatInteractiveMessageSummary(t *testing.T) {
 
 	t.Run("cta_url button missing url falls back to raw name", func(t *testing.T) {
 		// A cta_url button whose JSON has no url is unusable as a link, so it
-		// must not silently print a broken "🔗 Label: " line.
+		// must not silently print a broken "ðŸ”— Label: " line.
 		im := &waE2E.InteractiveMessage{
 			InteractiveMessage: &waE2E.InteractiveMessage_NativeFlowMessage_{
 				NativeFlowMessage: &waE2E.InteractiveMessage_NativeFlowMessage{
@@ -1148,7 +1148,7 @@ func TestFormatInteractiveMessageSummary(t *testing.T) {
 				},
 			},
 		}
-		want := "📋 Copy: SAVE10"
+		want := "ðŸ“‹ Copy: SAVE10"
 		if got := utils.FormatInteractiveMessageSummary(im); got != want {
 			t.Fatalf("got %q, want %q", got, want)
 		}
@@ -1225,7 +1225,7 @@ func TestFormatInteractiveMessageSummary(t *testing.T) {
 				},
 			},
 		}
-		want := "Check our products\nCard 1: Shoes\n🔗 Buy: https://example.com/shoes"
+		want := "Check our products\nCard 1: Shoes\nðŸ”— Buy: https://example.com/shoes"
 		if got := utils.FormatInteractiveMessageSummary(im); got != want {
 			t.Fatalf("got %q, want %q", got, want)
 		}

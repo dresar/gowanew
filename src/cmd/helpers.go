@@ -4,11 +4,11 @@ import (
 	"context"
 	"sync"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatwoot"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/ui/rest/helpers"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	"github.com/dresar/gowanew/infrastructure/chatwoot"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	"github.com/dresar/gowanew/ui/rest/helpers"
 	"github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow"
 )
@@ -40,7 +40,7 @@ func initChatwootForwarding(repo domainChatStorage.IChatStorageRepository) {
 	}
 	// Stamp the env account id onto pre-migration legacy links (account id 0) so
 	// the reverse route resolves them by exact account instead of the legacy-zero
-	// wildcard — closing a cross-account misroute once a second account is added.
+	// wildcard â€” closing a cross-account misroute once a second account is added.
 	if config.ChatwootAccountID != 0 {
 		if n, err := repo.BackfillChatwootMessageLinkAccount(config.ChatwootAccountID); err != nil {
 			logrus.Errorf("Chatwoot: failed to backfill legacy message-link account ids: %v", err)

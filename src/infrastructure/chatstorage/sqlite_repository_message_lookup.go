@@ -3,7 +3,7 @@ package chatstorage
 import (
 	"database/sql"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 )
 
 // GetMessageByIDChatAndDevice retrieves a message by its full storage identity.

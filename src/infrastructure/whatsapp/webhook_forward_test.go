@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatwoot"
+	"github.com/dresar/gowanew/config"
+	"github.com/dresar/gowanew/domains/chatstorage"
+	"github.com/dresar/gowanew/infrastructure/chatwoot"
 )
 
 type chatwootForwardQueueTestRepo struct {
@@ -531,7 +531,7 @@ func TestForwardPayloadToConfiguredWebhooks_DeviceWebhookCleared_FallsBackToGlob
 // TestForwardPayloadToConfiguredWebhooks_DeviceLookupError_FallsBackToGlobal verifies that a
 // transient storage error while resolving the device webhook config does not abort forwarding:
 // the event must still be delivered using the global webhook config. The function's contract is
-// to only return an error when all webhook deliveries fail — a config lookup failure is not a
+// to only return an error when all webhook deliveries fail â€” a config lookup failure is not a
 // delivery failure.
 func TestForwardPayloadToConfiguredWebhooks_DeviceLookupError_FallsBackToGlobal(t *testing.T) {
 	ctx := context.Background()

@@ -3,7 +3,7 @@ package rest
 import (
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
+	"github.com/dresar/gowanew/config"
 )
 
 func TestPerDeviceWebhookURLPreservesQuery(t *testing.T) {

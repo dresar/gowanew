@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"testing"
 
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	projectSQLite "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/sqlite"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	projectSQLite "github.com/dresar/gowanew/pkg/sqlite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mau.fi/whatsmeow"

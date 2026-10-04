@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
+	"github.com/dresar/gowanew/config"
 	"github.com/stretchr/testify/assert"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waCommon"
@@ -502,7 +502,7 @@ func TestBuildEventPayloadIncludesSenderDisplayName(t *testing.T) {
 					RemoteJID: protoString("628100000000@s.whatsapp.net"),
 					ID:        protoString("target-message"),
 				},
-				Text: protoString("👍"),
+				Text: protoString("ðŸ‘"),
 			}},
 			wantEvent: EventTypeMessageReaction,
 			wantName:  "Saved Contact",

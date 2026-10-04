@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/whatsapp"
-	uimcp "github.com/aldinokemal/go-whatsapp-web-multidevice/ui/mcp"
-	mcpoauth "github.com/aldinokemal/go-whatsapp-web-multidevice/ui/mcp/oauth"
+	"github.com/dresar/gowanew/config"
+	"github.com/dresar/gowanew/infrastructure/whatsapp"
+	uimcp "github.com/dresar/gowanew/ui/mcp"
+	mcpoauth "github.com/dresar/gowanew/ui/mcp/oauth"
 	"github.com/gofiber/fiber/v3"
 	"github.com/spf13/viper"
 )

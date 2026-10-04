@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	domainSend "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/send"
+	domainSend "github.com/dresar/gowanew/domains/send"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

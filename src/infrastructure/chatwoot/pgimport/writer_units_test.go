@@ -10,14 +10,14 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 )
 
 // SQL fragments below mirror the exact text the writer sends so that
 // regexp.QuoteMeta turns each into a literal matcher. Pinning the literal
 // (rather than a loose substring) means a meaningful query edit surfaces as
-// a test failure instead of silently passing — the same discipline the
+// a test failure instead of silently passing â€” the same discipline the
 // existing upsert_contact_test.go applies.
 
 const insertContactInboxSQL = `
@@ -76,7 +76,7 @@ const touchConversationSQL = `
 	`
 
 // ---------------------------------------------------------------------------
-// buildContent — cases not already covered by identity_test.go
+// buildContent â€” cases not already covered by identity_test.go
 // ---------------------------------------------------------------------------
 
 func TestBuildContent_OutgoingMediaPlaceholder(t *testing.T) {
@@ -95,7 +95,7 @@ func TestBuildContent_OutgoingMediaPlaceholder(t *testing.T) {
 
 func TestBuildContent_GroupOutgoingNoPrefix(t *testing.T) {
 	// In a group, our own outgoing messages (IsFromMe) must NOT be prefixed
-	// with a sender label — the prefix is only for distinguishing *other*
+	// with a sender label â€” the prefix is only for distinguishing *other*
 	// participants. The body is returned verbatim.
 	msg := &domainChatStorage.Message{Content: "my reply", IsFromMe: true, Sender: "628@s.whatsapp.net"}
 	if got := buildContent(msg, true); got != "my reply" {
@@ -132,13 +132,13 @@ func TestBuildContent_GroupEmptyBodyPlaceholderOffYieldsLabelOnly(t *testing.T) 
 }
 
 // ---------------------------------------------------------------------------
-// insertMessage — error / empty-content / idempotency branches.
+// insertMessage â€” error / empty-content / idempotency branches.
 // Sender resolution itself is covered in writer_test.go; these exercise the
 // early-return paths that the sender-resolution table does not.
 // ---------------------------------------------------------------------------
 
 func TestInsertMessage_EmptyIDReturnsErrorNoSQL(t *testing.T) {
-	// An empty message ID is rejected before any SQL is issued — registering
+	// An empty message ID is rejected before any SQL is issued â€” registering
 	// no expectations proves the function never touches the connection.
 	imp, mock, cleanup := newUpsertContactTestImporter(t)
 	defer cleanup()
@@ -165,7 +165,7 @@ func TestInsertMessage_EmptyIDReturnsErrorNoSQL(t *testing.T) {
 
 func TestInsertMessage_IdempotencyHitReturnsFalseNoInsert(t *testing.T) {
 	// When the idempotency probe finds an existing row, insertMessage returns
-	// (false, nil) and must NOT issue an INSERT — the row already exists.
+	// (false, nil) and must NOT issue an INSERT â€” the row already exists.
 	imp, mock, cleanup := newUpsertContactTestImporter(t)
 	defer cleanup()
 
@@ -369,7 +369,7 @@ func TestInsertMessage_GroupIncomingContentGetsSenderPrefix(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// insertMessageSavepoint — SAVEPOINT / RELEASE / ROLLBACK orchestration.
+// insertMessageSavepoint â€” SAVEPOINT / RELEASE / ROLLBACK orchestration.
 // ---------------------------------------------------------------------------
 
 func TestInsertMessageSavepoint_Success(t *testing.T) {
@@ -441,7 +441,7 @@ func TestInsertMessageSavepoint_InsertErrorRollsBackToSavepoint(t *testing.T) {
 	if !errors.Is(err, insertErr) {
 		t.Errorf("err = %v, want insert boom", err)
 	}
-	// Must NOT be a txFatalError — a single bad row is recoverable.
+	// Must NOT be a txFatalError â€” a single bad row is recoverable.
 	var fatal txFatalError
 	if errors.As(err, &fatal) {
 		t.Errorf("err classified as txFatalError; want recoverable error")
@@ -570,7 +570,7 @@ func TestInsertMessageSavepoint_RollbackErrorBecomesFatal(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// upsertContact — phone fallback branch (JID miss -> phone hit -> attach attr)
+// upsertContact â€” phone fallback branch (JID miss -> phone hit -> attach attr)
 // ---------------------------------------------------------------------------
 
 const attachJIDAttributeSQL = `
@@ -585,7 +585,7 @@ func TestUpsertContact_PhoneFallbackFoundAttachesJID(t *testing.T) {
 	// 1:1 chat where the JID lookup misses but a contact with the same phone
 	// number already exists (e.g. created by the live REST path without our
 	// custom attribute). We reuse that row and attach gowa_whatsapp_jid so the
-	// next import resolves it on the fast path — no duplicate contact created.
+	// next import resolves it on the fast path â€” no duplicate contact created.
 	imp, mock, cleanup := newUpsertContactTestImporter(t)
 	defer cleanup()
 
@@ -627,7 +627,7 @@ func TestUpsertContact_PhoneFallbackFoundAttachesJID(t *testing.T) {
 
 func TestUpsertContact_PhoneLookupErrorPropagates(t *testing.T) {
 	// A non-ErrNoRows error from the phone fallback lookup is surfaced to the
-	// caller (which rolls back the whole chat tx) — it must not silently fall
+	// caller (which rolls back the whole chat tx) â€” it must not silently fall
 	// through to an INSERT and risk a duplicate.
 	imp, mock, cleanup := newUpsertContactTestImporter(t)
 	defer cleanup()
@@ -1142,7 +1142,7 @@ func TestFindOrCreateConversation_CreatesPendingWhenConfigured(t *testing.T) {
 func TestFindOrCreateConversation_ReopensResolvedReusedConversation(t *testing.T) {
 	// With CHATWOOT_REOPEN_CONVERSATION=true (default), reusing a *resolved*
 	// conversation flips it back to the new-status via an UPDATE so the returning
-	// customer's thread resurfaces in the agent queue — matching the REST path.
+	// customer's thread resurfaces in the agent queue â€” matching the REST path.
 	imp, mock, cleanup := newUpsertContactTestImporter(t)
 	defer cleanup()
 
@@ -1213,7 +1213,7 @@ func TestFindOrCreateConversation_NoReopenWhenDisabled(t *testing.T) {
 }
 
 // nowishArg matches a driver time.Time argument that is at or after notBefore
-// and no further than a few seconds into the future — i.e. a value produced by
+// and no further than a few seconds into the future â€” i.e. a value produced by
 // a time.Now() call during the test. It lets us assert the now() fallback
 // branch without pinning an exact instant.
 type nowishArg struct {

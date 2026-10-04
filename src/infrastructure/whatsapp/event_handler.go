@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	domainDevice "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/device"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatwoot"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/ui/websocket"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	domainDevice "github.com/dresar/gowanew/domains/device"
+	"github.com/dresar/gowanew/infrastructure/chatwoot"
+	"github.com/dresar/gowanew/ui/websocket"
 	"github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/appstate"
@@ -267,7 +267,7 @@ func handleConnectionEvents(_ context.Context, client *whatsmeow.Client, instanc
 
 				// Keep the Chatwoot device config's JID current. The forward path
 				// resolves configs by JID, so a config created before the device
-				// paired (empty device_jid) — or one gone stale after a re-pair —
+				// paired (empty device_jid) â€” or one gone stale after a re-pair â€”
 				// would otherwise silently never match and every message would be
 				// skipped.
 				if config.ChatwootEnabled {
@@ -286,7 +286,7 @@ func handleConnectionEvents(_ context.Context, client *whatsmeow.Client, instanc
 	// Start Chatwoot history auto-sync on first connect for this device when
 	// CHATWOOT_IMPORT_MESSAGES is enabled. TriggerAutoSync self-guards on config,
 	// login state, and a once-per-device latch, so it is safe to call on every
-	// connect — placed before the pushname early-return because a freshly paired
+	// connect â€” placed before the pushname early-return because a freshly paired
 	// device may connect before its pushname is known.
 	if instance != nil {
 		if repo := instance.GetChatStorage(); repo != nil {

@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatwoot"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	"github.com/dresar/gowanew/infrastructure/chatwoot"
+	"github.com/dresar/gowanew/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow/types"
 )
@@ -23,7 +23,7 @@ var (
 	// getChatwootClientFn resolves the per-device Chatwoot destination for the
 	// forward path. Returns (nil, nil) when the device simply has no usable config
 	// (caller skips silently). Returns ErrClientRegistryUnavailable when the
-	// registry has not been initialized yet — a distinct condition that must NOT
+	// registry has not been initialized yet â€” a distinct condition that must NOT
 	// be mistaken for "no config", or a due retry would be marked done and a live
 	// forward dropped without delivery. Overridable in tests.
 	getChatwootClientFn = func(deviceID string) (*chatwoot.ResolvedConfig, error) {
@@ -152,7 +152,7 @@ func forwardPayloadToConfiguredWebhooks(ctx context.Context, payload map[string]
 	// Run the two legs concurrently. They share the caller's deadline, and each URL
 	// can spend up to ~15s in retry backoff, so running the device leg first would
 	// let one slow endpoint consume the whole budget and leave the global leg a dead
-	// context — precisely the silent drop this flag exists to prevent. Both legs only
+	// context â€” precisely the silent drop this flag exists to prevent. Both legs only
 	// read the payload from here on, so sharing it is safe.
 	var (
 		globalErr  error
@@ -280,7 +280,7 @@ func isEventWhitelistedForDevice(eventName string, deviceConfig *domainChatStora
 // LID forms (chat_lid/from_lid) are matched: a LID-migrated event keeps the @lid JID in the
 // *_lid fields while chat_id/from hold the resolved phone JID, so an "@lid" pattern (or an
 // exact ...@lid) only matches via the *_lid fields. It is a no-op when the ignore list is
-// empty, the inner payload is absent, or no JID matches — so events without a JID and the
+// empty, the inner payload is absent, or no JID matches â€” so events without a JID and the
 // default (no list configured) keep forwarding unchanged. This only gates the generic
 // webhook; the Chatwoot path keeps its own CHATWOOT_IGNORE_JIDS filter.
 func shouldIgnoreWebhookJID(payload map[string]any) bool {
@@ -407,7 +407,7 @@ func extractChatwootContactInfo(ctx context.Context, data map[string]any) (*chat
 	}
 
 	// System JIDs (status broadcasts and the WhatsApp service account) carry
-	// no useful conversation context for an agent inbox — relaying them would
+	// no useful conversation context for an agent inbox â€” relaying them would
 	// create a "Status" contact and a flood of status-update messages in
 	// Chatwoot for every contact who posts a status. We filter these out
 	// here for both incoming and outgoing flows.
@@ -416,14 +416,14 @@ func extractChatwootContactInfo(ctx context.Context, data map[string]any) (*chat
 	}
 
 	// Channel (newsletter) feeds are broadcast-only: no conversation for an
-	// agent, and the channel id is not a phone number — relaying one would
+	// agent, and the channel id is not a phone number â€” relaying one would
 	// fail Chatwoot contact creation with a 422 e164 error.
 	if utils.IsNewsletterJID(chatID) || utils.IsNewsletterJID(from) {
 		return nil, fmt.Errorf("skipping newsletter JID chat=%s from=%s", chatID, from)
 	}
 
 	// Operator-configured ignore list (CHATWOOT_IGNORE_JIDS) on top of the
-	// always-ignored system JIDs — supports exact JIDs and the "@g.us" /
+	// always-ignored system JIDs â€” supports exact JIDs and the "@g.us" /
 	// "@s.whatsapp.net" / "@lid" address-space wildcards.
 	if utils.MatchesIgnoredJID(chatID, config.ChatwootIgnoreJids) || utils.MatchesIgnoredJID(from, config.ChatwootIgnoreJids) {
 		return nil, fmt.Errorf("skipping ignored JID chat=%s from=%s", chatID, from)
@@ -478,7 +478,7 @@ func extractChatwootContactInfo(ctx context.Context, data map[string]any) (*chat
 // phone-normalization branch. Without this distinction, an @lid sender
 // whose LID->phone resolution fails earlier in the pipeline would arrive
 // here as e.g. "1234abcde@lid", get its suffix stripped to "1234abcde",
-// and then be misclassified as a phone number — creating a Chatwoot
+// and then be misclassified as a phone number â€” creating a Chatwoot
 // contact with a garbage phone_number that subsequent messages from the
 // same @lid sender cannot find.
 func chatwootIdentifierForJID(jid string) string {
@@ -526,7 +526,7 @@ func lookupContactDisplayName(ctx context.Context, jid string) string {
 // extractMediaPath returns the on-disk path for a media field in the
 // webhook payload, handling both shapes that buildAutoDownloadPayload can
 // emit: a bare string (no caption) or a map with a "path" key (when a
-// caption rode along). Returns "" when neither shape applies — including
+// caption rode along). Returns "" when neither shape applies â€” including
 // when WhatsappAutoDownloadMedia is disabled and the field carries only
 // {"url", ...} (Chatwoot can't render a remote URL as an attachment, so
 // we skip rather than POST a URL it can't fetch).
@@ -579,7 +579,7 @@ func buildChatwootMessageContent(data map[string]any, isGroup bool, fromName str
 
 	// Extract media attachments. The producer side (buildAutoDownloadPayload
 	// in event_message.go) emits a string path when the media has no caption
-	// and a {"path", "caption"} map when it does — the latter case applies
+	// and a {"path", "caption"} map when it does â€” the latter case applies
 	// to image, video, and document fields, where WhatsApp lets the user
 	// attach a body alongside the media. Without the map branch, captioned
 	// images/videos/documents land in Chatwoot as a text caption with NO
@@ -601,7 +601,7 @@ func buildChatwootMessageContent(data map[string]any, isGroup bool, fromName str
 
 	// interactive_media carries zero or more paths collected from an
 	// InteractiveMessage's header and, for carousels, every card's header
-	// (see collectInteractiveMedia in event_message.go) — a plain []string
+	// (see collectInteractiveMedia in event_message.go) â€” a plain []string
 	// rather than one of the singular mediaFields above, since a carousel
 	// can have media on more than one card and reusing e.g. "image" would
 	// have each extraction overwrite the last. []any covers the shape after
@@ -1080,7 +1080,7 @@ func truncateChatwootForwardError(err error) string {
 // enough to enqueue for retry on a transient failure. Base messages and their
 // edit/delete/reaction sub-events all carry a unique WhatsApp message id, so the
 // retry queue can replay them and dedup correctly. Read receipts (message.ack)
-// are intentionally excluded — they are best-effort and self-heal on the next
+// are intentionally excluded â€” they are best-effort and self-heal on the next
 // receipt.
 func isRetryableChatwootForwardEvent(eventName string) bool {
 	switch eventName {
@@ -1132,7 +1132,7 @@ func syncPayloadToChatwoot(ctx context.Context, payload map[string]any, eventNam
 	}
 	if resolved == nil || resolved.Client == nil {
 		// No Chatwoot config maps to this device (and env fallback does not apply).
-		// Skip silently — this is fail-fast, not an error to retry.
+		// Skip silently â€” this is fail-fast, not an error to retry.
 		logrus.Debugf("Chatwoot: no Chatwoot config for device %s; skipping forward", deviceID)
 		return nil
 	}
@@ -1256,7 +1256,7 @@ func processChatwootForwardRetryEvent(repo domainChatStorage.IChatStorageReposit
 	}
 	// Rebuild the device context the live path had: group-name and avatar
 	// lookups resolve the WhatsApp client from the context and would otherwise
-	// fall back to the global default device — the wrong client in multi-device
+	// fall back to the global default device â€” the wrong client in multi-device
 	// deployments.
 	ctx := context.Background()
 	if dm := GetDeviceManager(); dm != nil {
@@ -1323,15 +1323,15 @@ func buildEditDeleteChatwootContent(eventName string, data map[string]any, isGro
 			body = fromName + ": " + body
 		}
 		if body == "" {
-			return "✏️ _(message edited)_", threadID
+			return "âœï¸ _(message edited)_", threadID
 		}
-		return "✏️ **Edited:** " + body, threadID
+		return "âœï¸ **Edited:** " + body, threadID
 	case "message.revoked":
 		threadID, _ = data["revoked_message_id"].(string)
-		return "🗑️ _This message was deleted._", threadID
+		return "ðŸ—‘ï¸ _This message was deleted._", threadID
 	case "message.deleted":
 		threadID, _ = data["deleted_message_id"].(string)
-		return "🗑️ _This message was deleted._", threadID
+		return "ðŸ—‘ï¸ _This message was deleted._", threadID
 	}
 	return "", ""
 }

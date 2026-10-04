@@ -11,10 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/infrastructure/chatwoot/pgimport"
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/utils"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
+	"github.com/dresar/gowanew/infrastructure/chatwoot/pgimport"
+	"github.com/dresar/gowanew/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/types"
@@ -177,7 +177,7 @@ func (s *SyncService) SyncHistory(ctx context.Context, deviceID string, waClient
 
 	progress.SetRunning()
 
-	// Per-run group-name cache — local so concurrent SyncHistory calls
+	// Per-run group-name cache â€” local so concurrent SyncHistory calls
 	// for different devices don't share and invalidate each other's
 	// entries.
 	groupResolver := newGroupNameResolver()
@@ -223,7 +223,7 @@ func (s *SyncService) SyncHistory(ctx context.Context, deviceID string, waClient
 		// actionable conversation for an agent, and operators can ignore
 		// additional JIDs (or whole address spaces) via CHATWOOT_IGNORE_JIDS.
 		// Skipping at the chat level (rather than per-message) keeps the
-		// totals honest in the progress tracker — the chat is excluded
+		// totals honest in the progress tracker â€” the chat is excluded
 		// entirely instead of counted as "synced 0".
 		if utils.IsSystemBroadcastJID(chat.JID) || utils.IsNewsletterJID(chat.JID) || utils.MatchesIgnoredJID(chat.JID, config.ChatwootIgnoreJids) {
 			logrus.Debugf("Chatwoot Sync: Skipping ignored chat %s", chat.JID)
@@ -233,9 +233,9 @@ func (s *SyncService) SyncHistory(ctx context.Context, deviceID string, waClient
 		progress.UpdateChat(chat.JID)
 
 		// Resolve the real group subject before dispatching so both paths
-		// write a meaningful name instead of the "Group 120363…@g.us"
+		// write a meaningful name instead of the "Group 120363â€¦@g.us"
 		// fallback from sqlite_repository.go. Individual chats don't need
-		// this — their stored name comes from the push-name pipeline.
+		// this â€” their stored name comes from the push-name pipeline.
 		if strings.HasSuffix(chat.JID, "@g.us") {
 			if resolved := groupResolver.resolve(ctx, waClient, chat.JID); resolved != "" {
 				chat.Name = resolved
@@ -443,7 +443,7 @@ func (s *SyncService) syncChatPG(
 		return err
 	}
 
-	// Idempotent skips are recorded as "synced" for UI purposes — the row
+	// Idempotent skips are recorded as "synced" for UI purposes â€” the row
 	// is present in Chatwoot, which is what the operator cares about.
 	progress.AddSyncedMessages(result.MessagesWrote + result.MessagesSkipped)
 	progress.AddFailedMessages(result.MessagesFailed)
@@ -725,7 +725,7 @@ func getExtensionForMediaType(mediaType, filename string) string {
 }
 
 // retrySyncOp retries fn up to maxAttempts times with exponential backoff
-// (1s, 2s, 4s). Retries only transient errors — Retryable() returns true
+// (1s, 2s, 4s). Retries only transient errors â€” Retryable() returns true
 // for network/IO failures and for HTTP 429 / 5xx responses, and false for
 // 4xx validation errors so we don't hammer Chatwoot on misconfiguration.
 func retrySyncOp(ctx context.Context, maxAttempts int, fn func() error) error {
@@ -777,7 +777,7 @@ var (
 // until process restart. The previous service is left for any in-flight sync to
 // finish on; per-device services hold no pooled resources to close. Its
 // progress entries are carried over to the replacement so an in-flight run
-// stays visible — and keeps blocking a concurrent second run — across the
+// stays visible â€” and keeps blocking a concurrent second run â€” across the
 // rebuild (SyncProgress values are pointers with their own lock, so the old
 // run keeps updating the same entries the new service reports).
 func GetSyncServiceForDevice(
@@ -867,7 +867,7 @@ func (s *SyncService) Close() error {
 
 // autoSyncTriggered latches per storage-JID so history auto-sync runs at most
 // once per device per process. events.Connected fires on every reconnect, and
-// SyncHistory's in-flight guard only blocks *concurrent* runs — without this
+// SyncHistory's in-flight guard only blocks *concurrent* runs â€” without this
 // latch a reconnect after a completed sync would re-import history (harmless for
 // the idempotent pgimport path, but the REST path would duplicate messages).
 var autoSyncTriggered sync.Map

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
+	"github.com/dresar/gowanew/config"
 )
 
 func TestCanonicalizeChatwootURL(t *testing.T) {

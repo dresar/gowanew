@@ -3,8 +3,8 @@ package chatwoot
 import (
 	"testing"
 
-	"github.com/aldinokemal/go-whatsapp-web-multidevice/config"
-	domainChatStorage "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/chatstorage"
+	"github.com/dresar/gowanew/config"
+	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 )
 
 // fakeConfigRepo implements just the methods ClientRegistry uses; the rest of
@@ -132,7 +132,7 @@ func TestClientRegistryInvalidateRefreshes(t *testing.T) {
 // not keep that client after the first per-device config is written. The
 // forward path caches under the JID (with DeviceID = JID), so the write-path
 // Invalidate(<user-facing id>) can only clear it by purging legacy entries
-// wholesale — this is the regression test for that purge.
+// wholesale â€” this is the regression test for that purge.
 func TestClientRegistryInvalidatePurgesEnvFallbackEntries(t *testing.T) {
 	origURL, origTok, origAcc, origInbox := config.ChatwootURL, config.ChatwootAPIToken, config.ChatwootAccountID, config.ChatwootInboxID
 	t.Cleanup(func() {

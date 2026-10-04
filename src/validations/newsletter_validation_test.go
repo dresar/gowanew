@@ -5,8 +5,8 @@ import (
 	"math"
 	"testing"
 
-	domainNewsletter "github.com/aldinokemal/go-whatsapp-web-multidevice/domains/newsletter"
-	pkgError "github.com/aldinokemal/go-whatsapp-web-multidevice/pkg/error"
+	domainNewsletter "github.com/dresar/gowanew/domains/newsletter"
+	pkgError "github.com/dresar/gowanew/pkg/error"
 	"github.com/stretchr/testify/assert"
 )
 

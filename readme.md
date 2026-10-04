@@ -4,7 +4,7 @@
   <!-- markdownlint-disable-next-line MD033 -->
   <img src="gallery/gowa.svg" alt="GoWA Logo" width="200" height="200">
 
-## Go WhatsApp — Built for Efficient Memory Use
+## Go WhatsApp Ã¢â‚¬â€ Built for Efficient Memory Use
 
 </div>
 
@@ -16,22 +16,22 @@ Your support helps ensure the project stays maintained and receives regular upda
 
 ---
 
-![release version](https://img.shields.io/github/v/release/aldinokemal/go-whatsapp-web-multidevice)
-![Build Image](https://github.com/aldinokemal/go-whatsapp-web-multidevice/actions/workflows/build-docker-image.yaml/badge.svg)
-![Binary Release](https://github.com/aldinokemal/go-whatsapp-web-multidevice/actions/workflows/release.yml/badge.svg)
+![release version](https://img.shields.io/github/v/release/dresar/gowanew)
+![Build Image](https://github.com/dresar/gowanew/actions/workflows/build-docker-image.yaml/badge.svg)
+![Binary Release](https://github.com/dresar/gowanew/actions/workflows/release.yml/badge.svg)
 
 ## ARM, AMD64, and MCP Support
 
 Download:
 
-- [Release](https://github.com/aldinokemal/go-whatsapp-web-multidevice/releases/latest)
-- [Docker Hub](https://hub.docker.com/r/aldinokemal2104/go-whatsapp-web-multidevice/tags)
-- [GitHub Container Registry](https://github.com/aldinokemal/go-whatsapp-web-multidevice/pkgs/container/go-whatsapp-web-multidevice)
+- [Release](https://github.com/dresar/gowanew/releases/latest)
+- [Docker Hub](https://hub.docker.com/r/dresar/gowanew/tags)
+- [GitHub Container Registry](https://github.com/dresar/gowanew/pkgs/container/go-whatsapp-web-multidevice)
 
 ## n8n Community Node
 
-- [n8n package](https://www.npmjs.com/package/@aldinokemal2104/n8n-nodes-gowa)
-- Go to **Settings → Community Nodes**, enter `@aldinokemal2104/n8n-nodes-gowa`, and select **Install**.
+- [n8n package](https://www.npmjs.com/package/@dresar/n8n-nodes-gowa)
+- Go to **Settings Ã¢â€ â€™ Community Nodes**, enter `@dresar/n8n-nodes-gowa`, and select **Install**.
 
 ## Breaking Changes
 
@@ -42,7 +42,7 @@ Download:
     - Example: `./whatsapp mcp`.
 - `v7`
   - Starting with version 7.x, binaries are built with GoReleaser and can be downloaded from the
-    [latest release](https://github.com/aldinokemal/go-whatsapp-web-multidevice/releases/latest).
+    [latest release](https://github.com/dresar/gowanew/releases/latest).
 - `v8`
   - **Multi-device support**: You can now connect and manage multiple WhatsApp accounts simultaneously in a single
     server instance.
@@ -53,10 +53,10 @@ Download:
     - If only one device is registered, it is used as the default.
   - **WebSocket device scoping**: Connect to `/ws?device_id=<id>` to scope the WebSocket connection to a specific device.
   - **Remote UI support**: CORS allows the `Authorization` and `X-Device-Id` headers, so a standalone web UI
-    (for example, [gowa-ui](https://github.com/aldinokemal/gowa-ui)) hosted on another origin can call the API directly.
+    (for example, [gowa-ui](https://github.com/dresar/gowa-ui)) hosted on another origin can call the API directly.
     `GET /app/info` exposes the version and media size limits. Because browsers cannot set headers on WebSocket
     connections, pass `/ws?device_id=<id>&authorization=<base64(user:pass)>` when Basic Auth is enabled
-    (use TLS—the credential is visible in the URL).
+    (use TLSÃ¢â‚¬â€the credential is visible in the URL).
   - **Webhook payload changes**: All webhook payloads now include a top-level `device_id` field identifying which
     device received the event:
 
@@ -74,7 +74,7 @@ Download:
     subcommand). See [MCP Server (Model Context Protocol)](#mcp-server-model-context-protocol) for migration
     details.
   - **UI moved to a separate repository**: The web dashboard is no longer bundled in this repo. It now lives at
-    [aldinokemal/gowa-ui](https://github.com/aldinokemal/gowa-ui) and ships as a single self-contained
+    [dresar/gowa-ui](https://github.com/dresar/gowa-ui) and ships as a single self-contained
     `gowa-ui.html`. The server downloads the latest dashboard release at startup, verifies its SHA-256 digest,
     caches it under `storages/ui/`, and serves it at `/`.
     See [Web dashboard (gowa-ui)](#web-dashboard-gowa-ui) for the `APP_UI_*` settings, supply-chain pinning,
@@ -83,28 +83,28 @@ Download:
 ## Features
 
 - Send WhatsApp messages through the HTTP API. See [docs/openapi.yaml](./docs/openapi.yaml) for details.
-- **MCP (Model Context Protocol) server support** — Integrate with AI agents and tools using a standardized protocol.
-- **Optional MCP OAuth 2.1** — Connect remote MCP clients that cannot supply a Basic Auth header. See
+- **MCP (Model Context Protocol) server support** Ã¢â‚¬â€ Integrate with AI agents and tools using a standardized protocol.
+- **Optional MCP OAuth 2.1** Ã¢â‚¬â€ Connect remote MCP clients that cannot supply a Basic Auth header. See
   [MCP OAuth](./docs/mcp-oauth.md).
 - Mention users in message text and image, video, or file captions:
   - `@phoneNumber`
   - Example: `Hello @628974812XXXX, @628974812XXXX`
-- **Ghost mentions (mention all)** — Mention group participants without showing `@phone` in the message text.
+- **Ghost mentions (mention all)** Ã¢â‚¬â€ Mention group participants without showing `@phone` in the message text.
   - Pass phone numbers in the `mentions` field to mention users without a visible `@` in the message.
   - Use the special keyword `@everyone` to automatically mention all group participants.
 - Post WhatsApp status updates.
 - Mark incoming audio messages and voice notes as played.
-- **Scheduled sends** — Send any message later, once or on a daily, weekly, or monthly repeat.
+- **Scheduled sends** Ã¢â‚¬â€ Send any message later, once or on a daily, weekly, or monthly repeat.
   - Add `scheduled_at` (RFC3339) and `timezone` (IANA) to a send request; `recurrence`, `weekdays`, `day_of_month`,
     `end_at`, and `occurrence_limit` control repeats.
   - Schedules survive restarts and wait for an offline device; list, pause, resume, or cancel them at
     `/send/schedules`.
-- **Send stickers** — Automatically convert images to WebP sticker format.
+- **Send stickers** Ã¢â‚¬â€ Automatically convert images to WebP sticker format.
   - Supports JPG, JPEG, PNG, WebP, and GIF formats.
-  - Automatically resizes images to 512×512 pixels.
+  - Automatically resizes images to 512Ãƒâ€”512 pixels.
   - Preserves transparency in PNG images.
   - **Animated WebP stickers** are supported but must meet WhatsApp requirements:
-    - Exactly **512×512 pixels**.
+    - Exactly **512Ãƒâ€”512 pixels**.
     - Less than **500 KB**.
     - No more than **10 seconds** long.
     - If an animated sticker does not meet these requirements, resize it before uploading with a tool such as
@@ -134,9 +134,9 @@ Download:
     [Webhook Payload](./docs/webhook-payload.md#call-events) for call events).
 - Configurable presence on connect:
   - `--presence-on-connect=unavailable` or `WHATSAPP_PRESENCE_ON_CONNECT=unavailable`
-  - `available` — Mark the account as online (suppresses phone notifications).
-  - `unavailable` — Register the push name without going online (default; preserves phone notifications).
-  - `none` — Skip presence entirely (the push name is not registered, so contacts may see `-` as the name).
+  - `available` Ã¢â‚¬â€ Mark the account as online (suppresses phone notifications).
+  - `unavailable` Ã¢â‚¬â€ Register the push name without going online (default; preserves phone notifications).
+  - `none` Ã¢â‚¬â€ Skip presence entirely (the push name is not registered, so contacts may see `-` as the name).
 - Daily presence pulse:
   - `--presence-pulse-enabled=true` or `WHATSAPP_PRESENCE_PULSE_ENABLED=true` (default: `true`).
   - `--presence-pulse-interval=24h` controls how often each connected device is pulsed.
@@ -145,7 +145,7 @@ Download:
   - `--webhook="http://yourwebhook.site/handler"`
   - Short form: `-w="http://yourwebhook.site/handler"`
   - See [Webhook Payload Documentation](./docs/webhook-payload.md) for details.
-- **Per-device webhooks** — Each device can have its own webhook URL and event filters.
+- **Per-device webhooks** Ã¢â‚¬â€ Each device can have its own webhook URL and event filters.
   - Set via API: `PATCH /devices/:device_id/webhook` with `{"webhook_url": "https://device-webhook.site/handler"}`.
   - Get via API: `GET /devices/:device_id/webhook`.
   - When a device has a custom webhook, events for that device are sent to the device-specific URL.
@@ -155,14 +155,14 @@ Download:
     device webhook an addition instead of a replacement: the global `--webhook` URLs still receive the
     device's events (signed with the global secret, filtered by `WHATSAPP_WEBHOOK_EVENTS`) while the
     device URL keeps its own secret and event filter.
-- **Webhook signatures** — Webhook requests include an HMAC-SHA-256 signature in the `X-Hub-Signature-256`
+- **Webhook signatures** Ã¢â‚¬â€ Webhook requests include an HMAC-SHA-256 signature in the `X-Hub-Signature-256`
   header, generated with the default key `secret`.
 
   Change the key with:
   - `--webhook-secret="secret"`
-- **Webhook payload documentation** — For detailed schemas, security implementation, and integration examples,
+- **Webhook payload documentation** Ã¢â‚¬â€ For detailed schemas, security implementation, and integration examples,
   see [Webhook Payload Documentation](./docs/webhook-payload.md).
-- **Webhook event filtering** — Filter which events are forwarded to your webhook with:
+- **Webhook event filtering** Ã¢â‚¬â€ Filter which events are forwarded to your webhook with:
   - `--webhook-events="message,message.ack"` (a comma-separated list), or
   - `WHATSAPP_WEBHOOK_EVENTS=message,message.ack`.
 
@@ -247,7 +247,7 @@ To use environment variables:
 | `APP_CORS_ALLOWED_ORIGINS`              | Allowed CORS origins (any origin when empty)                  | -                                            | `APP_CORS_ALLOWED_ORIGINS=https://ui.example.com` |
 | `APP_UI_ENABLED`                        | Serve the downloaded gowa-ui dashboard                        | `true`                                       | `APP_UI_ENABLED=false`                        |
 | `APP_UI_AUTO_UPDATE`                    | Download and periodically refresh the latest dashboard        | `true`                                       | `APP_UI_AUTO_UPDATE=false`                    |
-| `APP_UI_REPO`                           | GitHub repository containing gowa-ui releases                 | `aldinokemal/gowa-ui`                        | `APP_UI_REPO=my-org/gowa-ui`                  |
+| `APP_UI_REPO`                           | GitHub repository containing gowa-ui releases                 | `dresar/gowa-ui`                        | `APP_UI_REPO=my-org/gowa-ui`                  |
 | `APP_UI_ASSET_NAME`                     | Dashboard release asset filename                              | `gowa-ui.html`                               | `APP_UI_ASSET_NAME=gowa-ui.html`              |
 | `APP_UI_UPDATE_INTERVAL`                | Interval between dashboard update checks                      | `3h`                                         | `APP_UI_UPDATE_INTERVAL=6h`                   |
 | `APP_UI_GITHUB_TOKEN`                   | Optional GitHub token for a higher API rate limit             | -                                            | `APP_UI_GITHUB_TOKEN=github_pat_xxx`          |
@@ -346,7 +346,7 @@ Run `./whatsapp --help` to see all command-line flags.
 
 ### Basic
 
-1. Clone the repository: `git clone https://github.com/aldinokemal/go-whatsapp-web-multidevice`.
+1. Clone the repository: `git clone https://github.com/dresar/gowanew`.
 2. Open the cloned directory in a terminal.
 3. Run `cd src`.
 4. Run `go run . rest`.
@@ -356,7 +356,7 @@ Run `./whatsapp --help` to see all command-line flags.
 
 Docker avoids the need to install Go, FFmpeg, and libwebp directly on the host.
 
-1. Clone the repository: `git clone https://github.com/aldinokemal/go-whatsapp-web-multidevice`.
+1. Clone the repository: `git clone https://github.com/dresar/gowanew`.
 2. Open the cloned directory in a terminal.
 3. Copy the environment file: `cp src/.env.example src/.env`.
 4. Run `docker compose up -d --build`.
@@ -364,7 +364,7 @@ Docker avoids the need to install Go, FFmpeg, and libwebp directly on the host.
 
 ### Build your own binary
 
-1. Clone the repository: `git clone https://github.com/aldinokemal/go-whatsapp-web-multidevice`.
+1. Clone the repository: `git clone https://github.com/dresar/gowanew`.
 2. Open the cloned directory in a terminal.
 3. Run `cd src`.
 4. Build the binary:
@@ -382,7 +382,7 @@ Run `./whatsapp --help` (or `.\whatsapp.exe --help` on Windows) to see all flags
 To build for a Raspberry Pi or another ARM device without a C toolchain (CGO), use the `purego` build tag. This
 selects a pure-Go SQLite implementation.
 
-1. Clone the repository: `git clone https://github.com/aldinokemal/go-whatsapp-web-multidevice`.
+1. Clone the repository: `git clone https://github.com/dresar/gowanew`.
 2. Open the cloned directory in a terminal.
 3. Run `cd src`.
 4. **Build for Raspberry Pi Zero / 1 (ARMv6):**
@@ -403,7 +403,7 @@ selects a pure-Go SQLite implementation.
 
 ### MCP Server (Model Context Protocol)
 
-MCP is not a separate mode or process — it's served by the REST server itself. Whenever `./whatsapp rest` is
+MCP is not a separate mode or process Ã¢â‚¬â€ it's served by the REST server itself. Whenever `./whatsapp rest` is
 running, the MCP endpoint is available at `http://<host>:<port><base-path>/mcp` (default
 `http://localhost:3000/mcp`) using the streamable HTTP transport. Disable it with `MCP_ENABLED=false` or
 `--mcp-enabled=false` (default: enabled).
@@ -471,9 +471,9 @@ subpath behavior, and the security model.
 
 #### Migrating from the standalone MCP mode
 
-- `./whatsapp mcp` → `./whatsapp rest` (MCP is now included automatically).
-- `http://localhost:8080/sse` → `http://localhost:3000/mcp`.
-- 40 granular tools → 5 consolidated tools (agents choose actions through the `type`/`action` field).
+- `./whatsapp mcp` Ã¢â€ â€™ `./whatsapp rest` (MCP is now included automatically).
+- `http://localhost:8080/sse` Ã¢â€ â€™ `http://localhost:3000/mcp`.
+- 40 granular tools Ã¢â€ â€™ 5 consolidated tools (agents choose actions through the `type`/`action` field).
 
 ### Production REST Server (Docker)
 
@@ -488,7 +488,7 @@ docker run --detach \
   --restart always \
   --volume whatsapp-storages:/app/storages \
   --volume whatsapp-statics:/app/statics \
-  aldinokemal2104/go-whatsapp-web-multidevice \
+  dresar/gowanew \
   rest --autoreply="Don't reply to this message, please"
 ```
 
@@ -503,7 +503,7 @@ docker run --detach \
   --restart always \
   --volume whatsapp-storages:/app/storages \
   --volume whatsapp-statics:/app/statics \
-  ghcr.io/aldinokemal/go-whatsapp-web-multidevice \
+  ghcr.io/dresar/gowanew \
   rest --autoreply="Don't reply to this message, please"
 ```
 
@@ -516,7 +516,7 @@ Using Docker Hub:
 ```yml
 services:
   whatsapp:
-    image: aldinokemal2104/go-whatsapp-web-multidevice
+    image: dresar/gowanew
     container_name: whatsapp
     restart: always
     ports:
@@ -542,7 +542,7 @@ Using GitHub Container Registry:
 ```yml
 services:
   whatsapp:
-    image: ghcr.io/aldinokemal/go-whatsapp-web-multidevice
+    image: ghcr.io/dresar/gowanew
     container_name: whatsapp
     restart: always
     ports:
@@ -568,7 +568,7 @@ Using environment variables with Docker Hub:
 ```yml
 services:
   whatsapp:
-    image: aldinokemal2104/go-whatsapp-web-multidevice
+    image: dresar/gowanew
     container_name: whatsapp
     restart: always
     ports:
@@ -593,7 +593,7 @@ Using environment variables with GitHub Container Registry:
 ```yml
 services:
   whatsapp:
-    image: ghcr.io/aldinokemal/go-whatsapp-web-multidevice
+    image: ghcr.io/dresar/gowanew
     container_name: whatsapp
     restart: always
     ports:
@@ -617,7 +617,7 @@ Start the selected stack with `docker compose up -d`.
 
 ### Production Server (Binary)
 
-Download a binary from the [releases page](https://github.com/aldinokemal/go-whatsapp-web-multidevice/releases), then
+Download a binary from the [releases page](https://github.com/dresar/gowanew/releases), then
 run it with the `rest` subcommand.
 
 You may also fork or modify the source code.
@@ -639,105 +639,105 @@ You may also fork or modify the source code.
 
 | Status   | Operation                              | Method | URL                                 |
 |----------|----------------------------------------|--------|-------------------------------------|
-| ✅       | Health Check                           | GET    | /health                             |
-| ✅       | List Devices                           | GET    | /devices                            |
-| ✅       | Add Device                             | POST   | /devices                            |
-| ✅       | Get Device Info                        | GET    | /devices/:device_id                 |
-| ✅       | Remove Device                          | DELETE | /devices/:device_id                 |
-| ✅       | Login Device (QR)                      | GET    | /devices/:device_id/login           |
-| ✅       | Login Device (Code)                    | POST   | /devices/:device_id/login/code      |
-| ✅       | Logout Device                          | POST   | /devices/:device_id/logout          |
-| ✅       | Reconnect Device                       | POST   | /devices/:device_id/reconnect       |
-| ✅       | Get Device Status                      | GET    | /devices/:device_id/status          |
-| ✅       | Get Device Webhook                     | GET    | /devices/:device_id/webhook         |
-| ✅       | Set Device Webhook                     | PATCH  | /devices/:device_id/webhook         |
-| ✅       | Log In with QR Code                    | GET    | /app/login                          |
-| ✅       | Log In with Pairing Code               | GET    | /app/login-with-code                |
-| ✅       | Passkey Pairing Status                 | GET    | /app/passkey                        |
-| ✅       | Passkey Pairing Response               | POST   | /app/passkey/response               |
-| ✅       | Confirm Passkey Pairing                | POST   | /app/passkey/confirm                |
-| ✅       | Logout                                 | GET    | /app/logout                         |
-| ✅       | Reconnect                              | GET    | /app/reconnect                      |
-| ✅       | Devices                                | GET    | /app/devices                        |
-| ✅       | Connection Status                      | GET    | /app/status                         |
-| ✅       | App Info (version, limits)             | GET    | /app/info                           |
-| ✅       | User Info                              | GET    | /user/info                          |
-| ✅       | User Avatar                            | GET    | /user/avatar                        |
-| ✅       | Change User Avatar                     | POST   | /user/avatar                        |
-| ✅       | Change User Push Name                  | POST   | /user/pushname                      |
-| ✅       | List My Groups*                        | GET    | /user/my/groups                     |
-| ✅       | List My Newsletters                    | GET    | /user/my/newsletters                |
-| ✅       | Get My Privacy Settings                | GET    | /user/my/privacy                    |
-| ✅       | List My Contacts                       | GET    | /user/my/contacts                   |
-| ✅       | Check WhatsApp User                    | GET    | /user/check                         |
-| ✅       | Get Business Profile                   | GET    | /user/business-profile              |
-| ✅       | Send Message                           | POST   | /send/message                       |
-| ✅       | Send Image                             | POST   | /send/image                         |
-| ✅       | Send Audio                             | POST   | /send/audio                         |
-| ✅       | Send File                              | POST   | /send/file                          |
-| ✅       | Send Video                             | POST   | /send/video                         |
-| ✅       | Send Sticker                           | POST   | /send/sticker                       |
-| ✅       | Send Contact                           | POST   | /send/contact                       |
-| ✅       | Send Link                              | POST   | /send/link                          |
-| ✅       | Send Location                          | POST   | /send/location                      |
-| ✅       | Send Poll / Vote                       | POST   | /send/poll                          |
-| ✅       | Send Presence                          | POST   | /send/presence                      |
-| ✅       | Send Chat Presence (Typing Indicator)  | POST   | /send/chat-presence                 |
-| ✅       | List Scheduled Sends                   | GET    | /send/schedules                     |
-| ✅       | Get Scheduled Send                     | GET    | /send/schedules/:schedule_id        |
-| ✅       | Pause Scheduled Send                   | POST   | /send/schedules/:schedule_id/pause  |
-| ✅       | Resume Scheduled Send                  | POST   | /send/schedules/:schedule_id/resume |
-| ✅       | Cancel Scheduled Send                  | POST   | /send/schedules/:schedule_id/cancel |
-| ✅       | Revoke Message                         | POST   | /message/:message_id/revoke         |
-| ✅       | React Message                          | POST   | /message/:message_id/reaction       |
-| ✅       | Delete Message                         | POST   | /message/:message_id/delete         |
-| ✅       | Edit Message                           | POST   | /message/:message_id/update         |
-| ✅       | Mark Message as Read                   | POST   | /message/:message_id/read           |
-| ✅       | Mark Audio Message as Played           | POST   | /message/:message_id/played         |
-| ✅       | Star Message                           | POST   | /message/:message_id/star           |
-| ✅       | Unstar Message                         | POST   | /message/:message_id/unstar         |
-| ✅       | Forward Message                        | POST   | /message/:message_id/forward        |
-| ✅       | Download Message Media                 | GET    | /message/:message_id/download       |
-| ✅       | Reject Call                            | POST   | /call/reject                        |
-| ✅       | Join Group with Link                   | POST   | /group/join-with-link               |
-| ✅       | Get Group Info from Link               | GET    | /group/info-from-link               |
-| ✅       | Get Group Info                         | GET    | /group/info                         |
-| ✅       | Leave Group                            | POST   | /group/leave                        |
-| ✅       | Create Group                           | POST   | /group                              |
-| ✅       | List Group Participants                | GET    | /group/participants                 |
-| ✅       | Add Group Participants                 | POST   | /group/participants                 |
-| ✅       | Remove Group Participants              | POST   | /group/participants/remove          |
-| ✅       | Promote Group Participants             | POST   | /group/participants/promote         |
-| ✅       | Demote Group Participants              | POST   | /group/participants/demote          |
-| ✅       | Export Group Participants (CSV)        | GET    | /group/participants/export          |
-| ✅       | List Group Join Requests               | GET    | /group/participant-requests         |
-| ✅       | Approve Group Join Requests            | POST   | /group/participant-requests/approve |
-| ✅       | Reject Group Join Requests             | POST   | /group/participant-requests/reject  |
-| ✅       | Set Group Photo                        | POST   | /group/photo                        |
-| ✅       | Set Group Name                         | POST   | /group/name                         |
-| ✅       | Lock or Unlock Group Settings          | POST   | /group/locked                       |
-| ✅       | Set Group Announcement Mode            | POST   | /group/announce                     |
-| ✅       | Set Group Topic                        | POST   | /group/topic                        |
-| ✅       | Get Group Invite Link                  | GET    | /group/invite-link                  |
-| ✅       | Unfollow Newsletter                    | POST   | /newsletter/unfollow                |
-| ✅       | Get Newsletter Messages                | GET    | /newsletter/messages                |
-| ✅       | Download Newsletter Message Media      | GET    | /newsletter/messages/{server_id}/download |
-| ✅       | Get Chat List                          | GET    | /chats                              |
-| ✅       | Get Chat Messages                      | GET    | /chat/:chat_jid/messages            |
-| ✅       | Pin Chat                               | POST   | /chat/:chat_jid/pin                 |
-| ✅       | Archive Chat                           | POST   | /chat/:chat_jid/archive             |
-| ✅       | Set Disappearing Messages              | POST   | /chat/:chat_jid/disappearing        |
-| ✅       | Request Chat History (Load Older Msgs) | POST   | /chat/:chat_jid/history             |
-| ✅       | Chatwoot Sync History                  | POST   | /chatwoot/sync                      |
-| ✅       | Chatwoot Sync Status                   | GET    | /chatwoot/sync/status               |
-| ✅       | List Chatwoot Configurations           | GET    | /chatwoot/configs                   |
-| ✅       | Get Device Chatwoot Configuration      | GET    | /devices/:device_id/chatwoot/config |
-| ✅       | Set Device Chatwoot Configuration      | PUT    | /devices/:device_id/chatwoot/config |
-| ✅       | Delete Device Chatwoot Configuration   | DELETE | /devices/:device_id/chatwoot/config |
-| ✅       | Chatwoot Reply Webhook                 | POST   | /chatwoot/webhook                   |
-| ✅       | Device Chatwoot Reply Webhook          | POST   | /chatwoot/webhook/:device_id        |
+| Ã¢Å“â€¦       | Health Check                           | GET    | /health                             |
+| Ã¢Å“â€¦       | List Devices                           | GET    | /devices                            |
+| Ã¢Å“â€¦       | Add Device                             | POST   | /devices                            |
+| Ã¢Å“â€¦       | Get Device Info                        | GET    | /devices/:device_id                 |
+| Ã¢Å“â€¦       | Remove Device                          | DELETE | /devices/:device_id                 |
+| Ã¢Å“â€¦       | Login Device (QR)                      | GET    | /devices/:device_id/login           |
+| Ã¢Å“â€¦       | Login Device (Code)                    | POST   | /devices/:device_id/login/code      |
+| Ã¢Å“â€¦       | Logout Device                          | POST   | /devices/:device_id/logout          |
+| Ã¢Å“â€¦       | Reconnect Device                       | POST   | /devices/:device_id/reconnect       |
+| Ã¢Å“â€¦       | Get Device Status                      | GET    | /devices/:device_id/status          |
+| Ã¢Å“â€¦       | Get Device Webhook                     | GET    | /devices/:device_id/webhook         |
+| Ã¢Å“â€¦       | Set Device Webhook                     | PATCH  | /devices/:device_id/webhook         |
+| Ã¢Å“â€¦       | Log In with QR Code                    | GET    | /app/login                          |
+| Ã¢Å“â€¦       | Log In with Pairing Code               | GET    | /app/login-with-code                |
+| Ã¢Å“â€¦       | Passkey Pairing Status                 | GET    | /app/passkey                        |
+| Ã¢Å“â€¦       | Passkey Pairing Response               | POST   | /app/passkey/response               |
+| Ã¢Å“â€¦       | Confirm Passkey Pairing                | POST   | /app/passkey/confirm                |
+| Ã¢Å“â€¦       | Logout                                 | GET    | /app/logout                         |
+| Ã¢Å“â€¦       | Reconnect                              | GET    | /app/reconnect                      |
+| Ã¢Å“â€¦       | Devices                                | GET    | /app/devices                        |
+| Ã¢Å“â€¦       | Connection Status                      | GET    | /app/status                         |
+| Ã¢Å“â€¦       | App Info (version, limits)             | GET    | /app/info                           |
+| Ã¢Å“â€¦       | User Info                              | GET    | /user/info                          |
+| Ã¢Å“â€¦       | User Avatar                            | GET    | /user/avatar                        |
+| Ã¢Å“â€¦       | Change User Avatar                     | POST   | /user/avatar                        |
+| Ã¢Å“â€¦       | Change User Push Name                  | POST   | /user/pushname                      |
+| Ã¢Å“â€¦       | List My Groups*                        | GET    | /user/my/groups                     |
+| Ã¢Å“â€¦       | List My Newsletters                    | GET    | /user/my/newsletters                |
+| Ã¢Å“â€¦       | Get My Privacy Settings                | GET    | /user/my/privacy                    |
+| Ã¢Å“â€¦       | List My Contacts                       | GET    | /user/my/contacts                   |
+| Ã¢Å“â€¦       | Check WhatsApp User                    | GET    | /user/check                         |
+| Ã¢Å“â€¦       | Get Business Profile                   | GET    | /user/business-profile              |
+| Ã¢Å“â€¦       | Send Message                           | POST   | /send/message                       |
+| Ã¢Å“â€¦       | Send Image                             | POST   | /send/image                         |
+| Ã¢Å“â€¦       | Send Audio                             | POST   | /send/audio                         |
+| Ã¢Å“â€¦       | Send File                              | POST   | /send/file                          |
+| Ã¢Å“â€¦       | Send Video                             | POST   | /send/video                         |
+| Ã¢Å“â€¦       | Send Sticker                           | POST   | /send/sticker                       |
+| Ã¢Å“â€¦       | Send Contact                           | POST   | /send/contact                       |
+| Ã¢Å“â€¦       | Send Link                              | POST   | /send/link                          |
+| Ã¢Å“â€¦       | Send Location                          | POST   | /send/location                      |
+| Ã¢Å“â€¦       | Send Poll / Vote                       | POST   | /send/poll                          |
+| Ã¢Å“â€¦       | Send Presence                          | POST   | /send/presence                      |
+| Ã¢Å“â€¦       | Send Chat Presence (Typing Indicator)  | POST   | /send/chat-presence                 |
+| Ã¢Å“â€¦       | List Scheduled Sends                   | GET    | /send/schedules                     |
+| Ã¢Å“â€¦       | Get Scheduled Send                     | GET    | /send/schedules/:schedule_id        |
+| Ã¢Å“â€¦       | Pause Scheduled Send                   | POST   | /send/schedules/:schedule_id/pause  |
+| Ã¢Å“â€¦       | Resume Scheduled Send                  | POST   | /send/schedules/:schedule_id/resume |
+| Ã¢Å“â€¦       | Cancel Scheduled Send                  | POST   | /send/schedules/:schedule_id/cancel |
+| Ã¢Å“â€¦       | Revoke Message                         | POST   | /message/:message_id/revoke         |
+| Ã¢Å“â€¦       | React Message                          | POST   | /message/:message_id/reaction       |
+| Ã¢Å“â€¦       | Delete Message                         | POST   | /message/:message_id/delete         |
+| Ã¢Å“â€¦       | Edit Message                           | POST   | /message/:message_id/update         |
+| Ã¢Å“â€¦       | Mark Message as Read                   | POST   | /message/:message_id/read           |
+| Ã¢Å“â€¦       | Mark Audio Message as Played           | POST   | /message/:message_id/played         |
+| Ã¢Å“â€¦       | Star Message                           | POST   | /message/:message_id/star           |
+| Ã¢Å“â€¦       | Unstar Message                         | POST   | /message/:message_id/unstar         |
+| Ã¢Å“â€¦       | Forward Message                        | POST   | /message/:message_id/forward        |
+| Ã¢Å“â€¦       | Download Message Media                 | GET    | /message/:message_id/download       |
+| Ã¢Å“â€¦       | Reject Call                            | POST   | /call/reject                        |
+| Ã¢Å“â€¦       | Join Group with Link                   | POST   | /group/join-with-link               |
+| Ã¢Å“â€¦       | Get Group Info from Link               | GET    | /group/info-from-link               |
+| Ã¢Å“â€¦       | Get Group Info                         | GET    | /group/info                         |
+| Ã¢Å“â€¦       | Leave Group                            | POST   | /group/leave                        |
+| Ã¢Å“â€¦       | Create Group                           | POST   | /group                              |
+| Ã¢Å“â€¦       | List Group Participants                | GET    | /group/participants                 |
+| Ã¢Å“â€¦       | Add Group Participants                 | POST   | /group/participants                 |
+| Ã¢Å“â€¦       | Remove Group Participants              | POST   | /group/participants/remove          |
+| Ã¢Å“â€¦       | Promote Group Participants             | POST   | /group/participants/promote         |
+| Ã¢Å“â€¦       | Demote Group Participants              | POST   | /group/participants/demote          |
+| Ã¢Å“â€¦       | Export Group Participants (CSV)        | GET    | /group/participants/export          |
+| Ã¢Å“â€¦       | List Group Join Requests               | GET    | /group/participant-requests         |
+| Ã¢Å“â€¦       | Approve Group Join Requests            | POST   | /group/participant-requests/approve |
+| Ã¢Å“â€¦       | Reject Group Join Requests             | POST   | /group/participant-requests/reject  |
+| Ã¢Å“â€¦       | Set Group Photo                        | POST   | /group/photo                        |
+| Ã¢Å“â€¦       | Set Group Name                         | POST   | /group/name                         |
+| Ã¢Å“â€¦       | Lock or Unlock Group Settings          | POST   | /group/locked                       |
+| Ã¢Å“â€¦       | Set Group Announcement Mode            | POST   | /group/announce                     |
+| Ã¢Å“â€¦       | Set Group Topic                        | POST   | /group/topic                        |
+| Ã¢Å“â€¦       | Get Group Invite Link                  | GET    | /group/invite-link                  |
+| Ã¢Å“â€¦       | Unfollow Newsletter                    | POST   | /newsletter/unfollow                |
+| Ã¢Å“â€¦       | Get Newsletter Messages                | GET    | /newsletter/messages                |
+| Ã¢Å“â€¦       | Download Newsletter Message Media      | GET    | /newsletter/messages/{server_id}/download |
+| Ã¢Å“â€¦       | Get Chat List                          | GET    | /chats                              |
+| Ã¢Å“â€¦       | Get Chat Messages                      | GET    | /chat/:chat_jid/messages            |
+| Ã¢Å“â€¦       | Pin Chat                               | POST   | /chat/:chat_jid/pin                 |
+| Ã¢Å“â€¦       | Archive Chat                           | POST   | /chat/:chat_jid/archive             |
+| Ã¢Å“â€¦       | Set Disappearing Messages              | POST   | /chat/:chat_jid/disappearing        |
+| Ã¢Å“â€¦       | Request Chat History (Load Older Msgs) | POST   | /chat/:chat_jid/history             |
+| Ã¢Å“â€¦       | Chatwoot Sync History                  | POST   | /chatwoot/sync                      |
+| Ã¢Å“â€¦       | Chatwoot Sync Status                   | GET    | /chatwoot/sync/status               |
+| Ã¢Å“â€¦       | List Chatwoot Configurations           | GET    | /chatwoot/configs                   |
+| Ã¢Å“â€¦       | Get Device Chatwoot Configuration      | GET    | /devices/:device_id/chatwoot/config |
+| Ã¢Å“â€¦       | Set Device Chatwoot Configuration      | PUT    | /devices/:device_id/chatwoot/config |
+| Ã¢Å“â€¦       | Delete Device Chatwoot Configuration   | DELETE | /devices/:device_id/chatwoot/config |
+| Ã¢Å“â€¦       | Chatwoot Reply Webhook                 | POST   | /chatwoot/webhook                   |
+| Ã¢Å“â€¦       | Device Chatwoot Reply Webhook          | POST   | /chatwoot/webhook/:device_id        |
 
-`✅` = available. `*` = has known limitations; see the notes below.
+`Ã¢Å“â€¦` = available. `*` = has known limitations; see the notes below.
 
 **Notes:**
 
@@ -760,7 +760,7 @@ You may also fork or modify the source code.
 
 ### Web dashboard (gowa-ui)
 
-The dashboard lives in its own repository: [aldinokemal/gowa-ui](https://github.com/aldinokemal/gowa-ui). Each
+The dashboard lives in its own repository: [dresar/gowa-ui](https://github.com/dresar/gowa-ui). Each
 gowa-ui release publishes a single self-contained `gowa-ui.html`; the server downloads the latest release at
 startup (and every `APP_UI_UPDATE_INTERVAL`, which defaults to 3h), verifies its SHA-256 digest, caches it under
 `storages/ui/`, and serves it at `/` behind Basic Auth.
@@ -769,7 +769,7 @@ startup (and every `APP_UI_UPDATE_INTERVAL`, which defaults to 3h), verifies its
 |--------------------------|----------------------|---------------------------------------------------------------------|
 | `APP_UI_ENABLED`         | `true`               | Serve the dashboard at `/`; `false` returns a JSON banner (API-only) |
 | `APP_UI_AUTO_UPDATE`     | `true`               | Download/refresh from GitHub; disable for air-gapped deployments     |
-| `APP_UI_REPO`            | `aldinokemal/gowa-ui` | Repository the updater follows—always its latest release, not a version pin |
+| `APP_UI_REPO`            | `dresar/gowa-ui` | Repository the updater followsÃ¢â‚¬â€always its latest release, not a version pin |
 | `APP_UI_ASSET_NAME`      | `gowa-ui.html`       | Release asset filename to download                                   |
 | `APP_UI_UPDATE_INTERVAL` | `3h`                 | How often to check `releases/latest`                                 |
 | `APP_UI_GITHUB_TOKEN`    | (empty)              | Optional token to raise the GitHub API rate limit                    |
@@ -777,7 +777,7 @@ startup (and every `APP_UI_UPDATE_INTERVAL`, which defaults to 3h), verifies its
 
 Trust model: the release digest proves the download matches what GitHub advertises, not who published it.
 Operators who audit a specific build can pin it with `APP_UI_ASSET_SHA256` (each release ships a `.sha256`
-asset—this is the only setting that pins an exact build), point `APP_UI_REPO` at a fork they control
+assetÃ¢â‚¬â€this is the only setting that pins an exact build), point `APP_UI_REPO` at a fork they control
 (the updater still tracks that repo's latest release), or pre-seed the cache and disable auto-update entirely.
 
 Air-gapped servers: place a downloaded `gowa-ui.html` at `storages/ui/index.html` and set
