@@ -37,6 +37,8 @@ type cacheMeta struct {
 func (m *Manager) LoadCache() error {
 	candidatePaths := []string{
 		filepath.Join(m.cfg.CacheDir, cacheFileName),
+		filepath.Join("..", "golangwaui", "dist", "index.html"),
+		filepath.Join("golangwaui", "dist", "index.html"),
 		filepath.Join("..", "gowa-ui-dev", "dist", "index.html"),
 		filepath.Join("gowa-ui-dev", "dist", "index.html"),
 		filepath.Join("..", "dist", "index.html"),
