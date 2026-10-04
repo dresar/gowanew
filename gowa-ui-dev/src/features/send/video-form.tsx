@@ -1,0 +1,94 @@
+import { useState, type FormEvent } from 'react'
+import { sendVideo, videoRequest, type MediaQuality } from '@/api/send'
+import { FormActions } from '@/components/shared/curl-dialog'
+import { FileOrUrlInput, type FileOrUrl } from '@/components/shared/file-or-url-input'
+import { ResultPanel } from '@/components/shared/result-panel'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { MediaQualityField } from '@/features/send/media-quality-field'
+import { useActionMutation } from '@/hooks/use-action-mutation'
+import { useRecipientJid } from '@/stores/recipient'
+import { ScheduleFields } from '@/features/send/schedule-fields'
+import { useScheduleDraft } from '@/features/send/use-schedule-draft'
+import { useAllowReshare } from '@/features/send/use-allow-reshare'
+
+export function SendVideoForm() {
+  const jid = useRecipientJid()
+  const [source, setSource] = useState<FileOrUrl>({ url: '' })
+  const [caption, setCaption] = useState('')
+  const [viewOnce, setViewOnce] = useState(false)
+  const { statusRecipient, allowReshare, setAllowReshare } = useAllowReshare()
+  const [quality, setQuality] = useState<MediaQuality>('standard')
+  const [gifPlayback, setGifPlayback] = useState(false)
+  const { draft, patch, reset: resetSchedule } = useScheduleDraft()
+
+  const mutation = useActionMutation(sendVideo, {
+    successMessage: (r) => (r.schedule_id ? r.status : 'Video sent'),
+    onSuccess: () => {
+      setSource({ url: '' })
+      setCaption('')
+      setViewOnce(false)
+      setAllowReshare(false)
+      setQuality('standard')
+      setGifPlayback(false)
+      resetSchedule()
+    },
+  })
+
+  const payload = {
+    phone: jid,
+    file: source.file,
+    fileUrl: source.url || undefined,
+    caption,
+    view_once: viewOnce,
+    allow_reshare: allowReshare || undefined,
+    quality,
+    gif_playback: gifPlayback,
+    // view_once messages cannot be forwarded per the WhatsApp protocol
+    is_forwarded: viewOnce ? false : undefined,
+    ...draft,
+  }
+
+  const onSubmit = (event: FormEvent) => {
+    event.preventDefault()
+    mutation.mutate(payload)
+  }
+
+  return (
+    <form className="flex flex-col gap-4" onSubmit={onSubmit}>
+      <FileOrUrlInput label="Video" accept="video/*" value={source} onChange={setSource} />
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="video-caption">Caption</Label>
+        <Input
+          id="video-caption"
+          value={caption}
+          onChange={(event) => setCaption(event.target.value)}
+        />
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <Switch checked={viewOnce} onCheckedChange={setViewOnce} />
+        View once
+      </label>
+      {statusRecipient && (
+        <label className="flex items-center gap-2 text-sm">
+          <Switch checked={allowReshare} onCheckedChange={setAllowReshare} />
+          Allow resharing
+        </label>
+      )}
+      <MediaQualityField value={quality} onChange={setQuality} />
+      <label className="flex items-center gap-2 text-sm">
+        <Switch checked={gifPlayback} onCheckedChange={setGifPlayback} />
+        GIF playback
+      </label>
+      <ScheduleFields draft={draft} patch={patch} />
+      <FormActions
+        submitLabel="Send video"
+        pending={mutation.isPending}
+        disabled={!jid}
+        request={videoRequest(payload)}
+      />
+      <ResultPanel result={mutation.data} />
+    </form>
+  )
+}

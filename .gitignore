@@ -44,3 +44,7 @@ docs/superpowers/
 # whatsmeow store (legacy path)
 src/whatsapp/
 .mcp.json
+
+# UI dev dependencies & build artifacts
+gowa-ui-dev/node_modules/
+gowa-ui-dev/dist/
