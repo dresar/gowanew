@@ -9,6 +9,7 @@ import (
 	"context"
 	"math/rand/v2"
 	"net/http"
+	"os"
 	"sync/atomic"
 	"time"
 
@@ -34,10 +35,12 @@ type Config struct {
 }
 
 type cachedAsset struct {
-	html   []byte
-	sha256 string
-	tag    string
-	etag   string // GitHub API ETag for conditional release lookups
+	html    []byte
+	sha256  string
+	tag     string
+	etag    string // GitHub API ETag for conditional release lookups
+	path    string
+	modTime time.Time
 }
 
 type Manager struct {
@@ -57,7 +60,13 @@ func New(cfg Config) *Manager {
 // Content returns the dashboard HTML and its sha256 (usable as an ETag).
 func (m *Manager) Content() (html []byte, etag string, ok bool) {
 	asset := m.current.Load()
-	if asset == nil || len(asset.html) == 0 {
+	if asset != nil && asset.path != "" {
+		if fi, err := os.Stat(asset.path); err == nil && fi.ModTime().After(asset.modTime) {
+			if err := m.LoadCache(); err == nil {
+				asset = m.current.Load()
+			}
+		}
+	} else if asset == nil || len(asset.html) == 0 {
 		if err := m.LoadCache(); err == nil {
 			asset = m.current.Load()
 		}

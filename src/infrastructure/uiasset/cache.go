@@ -47,12 +47,16 @@ func (m *Manager) LoadCache() error {
 
 	var html []byte
 	var loadedFrom string
+	var modTime time.Time
 
 	for _, p := range candidatePaths {
-		if data, readErr := os.ReadFile(p); readErr == nil && len(data) > 0 {
-			html = data
-			loadedFrom = p
-			break
+		if fi, statErr := os.Stat(p); statErr == nil && fi.Size() > 0 {
+			if data, readErr := os.ReadFile(p); readErr == nil && len(data) > 0 {
+				html = data
+				loadedFrom = p
+				modTime = fi.ModTime()
+				break
+			}
 		}
 	}
 
@@ -62,7 +66,7 @@ func (m *Manager) LoadCache() error {
 
 	logrus.Infof("[UI_ASSET] loaded dashboard from %s (%d bytes)", loadedFrom, len(html))
 
-	asset := cachedAsset{html: html, sha256: contentSHA(html)}
+	asset := cachedAsset{html: html, sha256: contentSHA(html), path: loadedFrom, modTime: modTime}
 	if metaRaw, metaErr := os.ReadFile(filepath.Join(m.cfg.CacheDir, metaFileName)); metaErr == nil {
 		var meta cacheMeta
 		if json.Unmarshal(metaRaw, &meta) == nil && meta.AssetName == m.cfg.AssetName {

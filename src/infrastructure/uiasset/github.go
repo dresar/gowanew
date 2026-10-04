@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -111,7 +113,14 @@ func (m *Manager) EnsureLatest(ctx context.Context) error {
 	if err = m.persist(html, rel.TagName, downloadedSHA, etag); err != nil {
 		logrus.Warnf("[UI_ASSET] cache write failed (serving from memory): %v", err)
 	}
-	m.current.Store(&cachedAsset{html: html, sha256: downloadedSHA, tag: rel.TagName, etag: etag})
+	m.current.Store(&cachedAsset{
+		html:    html,
+		sha256:  downloadedSHA,
+		tag:     rel.TagName,
+		etag:    etag,
+		path:    filepath.Join(m.cfg.CacheDir, cacheFileName),
+		modTime: time.Now().UTC(),
+	})
 	logrus.Infof("[UI_ASSET] dashboard updated to %s (%d bytes)", rel.TagName, len(html))
 	return nil
 }
