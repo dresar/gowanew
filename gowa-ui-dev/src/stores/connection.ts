@@ -33,7 +33,7 @@ export async function probeServer(
 ): Promise<TestResult> {
   try {
     const response = await axios.get<ResponseData<unknown>>(`${baseUrl}/devices`, {
-      timeout: 8_000,
+      timeout: 5_000,
       validateStatus: () => true,
       headers: {
         Accept: 'application/json',
@@ -81,16 +81,39 @@ export const useConnection = create<ConnectionState>()(
             set({ status: 'connected' })
             return
           }
-          set({ status: stored === 'unauthorized' ? 'unauthorized' : 'unreachable' })
-          return
+          if (stored === 'unauthorized') {
+            set({ status: 'unauthorized' })
+            return
+          }
         }
-        // Zero-config: the page may be served by gowa itself. The browser
-        // replays cached basic-auth credentials on same-origin requests.
+
+        // 1. Same-origin check: when served directly by GOWA at http://localhost:3000/
         const origin = sameOriginBaseUrl()
         if ((await probeServer(origin)) === 'ok') {
           set({ baseUrl: origin, status: 'connected' })
           return
         }
+
+        // 2. Default backend URL check (e.g. http://localhost:3000)
+        const defaultServer = normalizeBaseUrl(
+          (import.meta.env.VITE_DEFAULT_SERVER_URL as string | undefined) || 'http://localhost:3000',
+        )
+        if (defaultServer && defaultServer !== origin) {
+          if ((await probeServer(defaultServer)) === 'ok') {
+            set({ baseUrl: defaultServer, status: 'connected' })
+            return
+          }
+        }
+
+        // 3. /gowa dev proxy fallback for local Vite dev
+        if (origin.includes(':5173')) {
+          const gowaProxy = `${origin}/gowa`
+          if ((await probeServer(gowaProxy)) === 'ok') {
+            set({ baseUrl: gowaProxy, status: 'connected' })
+            return
+          }
+        }
+
         set({ status: 'unconfigured' })
       },
 

@@ -17,8 +17,6 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      // Same-origin fallback for developing against a gowa server without
-      // CORS support: point the UI at http://localhost:5173/gowa instead.
       proxy: {
         '/gowa': {
           target: backendUrl,
@@ -26,6 +24,17 @@ export default defineConfig(({ mode }) => {
           ws: true,
           rewrite: (p) => p.replace(/^\/gowa/, ''),
         },
+        '/devices': { target: backendUrl, changeOrigin: true },
+        '/app': { target: backendUrl, changeOrigin: true },
+        '/send': { target: backendUrl, changeOrigin: true },
+        '/chat': { target: backendUrl, changeOrigin: true },
+        '/group': { target: backendUrl, changeOrigin: true },
+        '/user': { target: backendUrl, changeOrigin: true },
+        '/message': { target: backendUrl, changeOrigin: true },
+        '/newsletter': { target: backendUrl, changeOrigin: true },
+        '/call': { target: backendUrl, changeOrigin: true },
+        '/schedule': { target: backendUrl, changeOrigin: true },
+        '/ws': { target: backendUrl, changeOrigin: true, ws: true },
       },
     },
   }
