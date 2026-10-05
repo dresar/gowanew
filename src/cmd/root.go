@@ -52,6 +52,7 @@ var (
 	groupUsecase      domainGroup.IGroupUsecase
 	newsletterUsecase domainNewsletter.INewsletterUsecase
 	deviceUsecase     domainDevice.IDeviceUsecase
+	botUsecase        usecase.IBotUsecase
 	scheduleStop      func()
 )
 
@@ -723,6 +724,7 @@ func initApp() {
 	groupUsecase = usecase.NewGroupService()
 	newsletterUsecase = usecase.NewNewsletterService()
 	deviceUsecase = usecase.NewDeviceService(dm, appUsecase)
+	botUsecase = usecase.GetGlobalBotService()
 	scheduleCtx, scheduleCancel := context.WithCancel(context.Background())
 	scheduleService.Start(scheduleCtx)
 	// Stop gives an in-flight scheduled send up to 10s to finish before storage

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/dresar/gowanew/config"
@@ -357,8 +358,24 @@ func handleAppState(ctx context.Context, evt *events.AppState, deviceID string, 
 	}
 }
 
+var (
+	botGroupInfoHandlerMu sync.RWMutex
+	botGroupInfoHandler   func(ctx context.Context, evt *events.GroupInfo, client *whatsmeow.Client)
+)
+
+func SetBotGroupInfoHandler(handler func(ctx context.Context, evt *events.GroupInfo, client *whatsmeow.Client)) {
+	botGroupInfoHandlerMu.Lock()
+	defer botGroupInfoHandlerMu.Unlock()
+	botGroupInfoHandler = handler
+}
+
+func GetBotGroupInfoHandler() func(ctx context.Context, evt *events.GroupInfo, client *whatsmeow.Client) {
+	botGroupInfoHandlerMu.RLock()
+	defer botGroupInfoHandlerMu.RUnlock()
+	return botGroupInfoHandler
+}
+
 func handleGroupInfo(ctx context.Context, evt *events.GroupInfo, deviceID string, client *whatsmeow.Client) {
-	// Only process events that have actual changes
 	hasChanges := len(evt.Join) > 0 || len(evt.Leave) > 0 || len(evt.Promote) > 0 || len(evt.Demote) > 0 ||
 		evt.Name != nil || evt.Topic != nil || evt.Locked != nil || evt.Announce != nil
 
@@ -366,7 +383,6 @@ func handleGroupInfo(ctx context.Context, evt *events.GroupInfo, deviceID string
 		return
 	}
 
-	// Log group events for debugging
 	if len(evt.Join) > 0 {
 		log.Infof("Group %s: %d users joined at %s", evt.JID, len(evt.Join), evt.Timestamp)
 	}
@@ -380,7 +396,13 @@ func handleGroupInfo(ctx context.Context, evt *events.GroupInfo, deviceID string
 		log.Infof("Group %s: %d users demoted at %s", evt.JID, len(evt.Demote), evt.Timestamp)
 	}
 
-	// Forward group info event to webhook
+	botGroupInfoHandlerMu.RLock()
+	bgh := botGroupInfoHandler
+	botGroupInfoHandlerMu.RUnlock()
+	if bgh != nil {
+		bgh(ctx, evt, client)
+	}
+
 	go func(e *events.GroupInfo, c *whatsmeow.Client) {
 		webhookCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
 		defer cancel()

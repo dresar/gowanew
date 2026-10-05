@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/dresar/gowanew/config"
@@ -16,8 +17,24 @@ import (
 	"go.mau.fi/whatsmeow/types/events"
 )
 
+var (
+	botHandlerMu sync.RWMutex
+	botHandler   func(ctx context.Context, evt *events.Message, chatStorageRepo domainChatStorage.IChatStorageRepository, client *whatsmeow.Client) bool
+)
+
+func SetBotHandler(handler func(ctx context.Context, evt *events.Message, chatStorageRepo domainChatStorage.IChatStorageRepository, client *whatsmeow.Client) bool) {
+	botHandlerMu.Lock()
+	defer botHandlerMu.Unlock()
+	botHandler = handler
+}
+
+func GetBotHandler() func(ctx context.Context, evt *events.Message, chatStorageRepo domainChatStorage.IChatStorageRepository, client *whatsmeow.Client) bool {
+	botHandlerMu.RLock()
+	defer botHandlerMu.RUnlock()
+	return botHandler
+}
+
 func handleMessage(ctx context.Context, evt *events.Message, chatStorageRepo domainChatStorage.IChatStorageRepository, client *whatsmeow.Client) {
-	// Log message metadata
 	metaParts := buildMessageMetaParts(evt)
 	log.Infof("Received message %s from %s (%s): %+v",
 		evt.Info.ID,
@@ -26,11 +43,6 @@ func handleMessage(ctx context.Context, evt *events.Message, chatStorageRepo dom
 		evt.Message,
 	)
 
-	// Materialize SecretEncryptedMessage{MESSAGE_EDIT} envelope (sent by recent
-	// LID-migrated WhatsApp clients) into the legacy ProtocolMessage{MESSAGE_EDIT}
-	// form, so chat storage, webhook, and auto-reply all use the existing
-	// edit-handling paths unchanged. No-op when the envelope is absent or when
-	// decryption fails.
 	evt = materializeSecretEditMessage(ctx, evt, client)
 	pollPayload := preparePollWebhookPayload(ctx, client, chatStorageRepo, evt)
 
@@ -44,20 +56,25 @@ func handleMessage(ctx context.Context, evt *events.Message, chatStorageRepo dom
 	}
 
 	if err := chatStorageRepo.CreateMessage(ctx, evt); err != nil {
-		// Log storage errors to avoid silent failures that could lead to data loss
 		log.Errorf("Failed to store incoming message %s: %v", evt.Info.ID, err)
 	}
 
-	// Handle image message if present
 	handleImageMessage(ctx, evt, client)
 
-	// Auto-mark message as read if configured
 	handleAutoMarkRead(ctx, evt, client)
 
-	// Handle auto-reply if configured
-	handleAutoReply(ctx, evt, chatStorageRepo, client)
+	handled := false
+	botHandlerMu.RLock()
+	bh := botHandler
+	botHandlerMu.RUnlock()
+	if bh != nil {
+		handled = bh(ctx, evt, chatStorageRepo, client)
+	}
 
-	// Forward to webhook if configured
+	if !handled {
+		handleAutoReply(ctx, evt, chatStorageRepo, client)
+	}
+
 	handleWebhookForward(ctx, evt, client, pollPayload)
 }
 
@@ -82,11 +99,6 @@ func shouldIgnoreImageDownload(autoDownloadMedia, ignoreStatusMedia bool, chatJI
 	if !autoDownloadMedia {
 		return true
 	}
-	// Match on the JID's shape rather than struct equality: whatsmeow's
-	// broadcast branch assigns source.Chat without ToNonAD(), so a
-	// device-qualified status JID would not compare equal to
-	// types.StatusBroadcastJID. IsBroadcastList() is defined as "broadcast
-	// server and user != status", so negating it selects exactly status.
 	if ignoreStatusMedia && chatJID.Server == types.BroadcastServer && !chatJID.IsBroadcastList() {
 		return true
 	}
@@ -110,7 +122,6 @@ func handleImageMessage(ctx context.Context, evt *events.Message, client *whatsm
 }
 
 func handleAutoMarkRead(ctx context.Context, evt *events.Message, client *whatsmeow.Client) {
-	// Only mark read if auto-mark read is enabled and message is incoming
 	if !config.WhatsappAutoMarkRead || evt.Info.IsFromMe {
 		return
 	}
@@ -119,7 +130,6 @@ func handleAutoMarkRead(ctx context.Context, evt *events.Message, client *whatsm
 		return
 	}
 
-	// Mark the message as read
 	messageIDs := []types.MessageID{evt.Info.ID}
 	timestamp := time.Now()
 	chat := evt.Info.Chat
@@ -132,12 +142,6 @@ func handleAutoMarkRead(ctx context.Context, evt *events.Message, client *whatsm
 	}
 }
 
-// materializeSecretEditMessage decrypts a SecretEncryptedMessage{MESSAGE_EDIT}
-// envelope into its inner ProtocolMessage{MESSAGE_EDIT} form so downstream
-// consumers (chat storage, webhook payload builder, auto-reply) can rely on
-// the legacy edit-handling code paths unchanged. Returns the original event
-// when no envelope is present, when the client is nil, or when decryption
-// fails â€” preserving existing behavior in every other case.
 func materializeSecretEditMessage(ctx context.Context, evt *events.Message, client *whatsmeow.Client) *events.Message {
 	if evt == nil || evt.Message == nil || client == nil {
 		return evt
@@ -165,30 +169,20 @@ func materializeSecretEditMessage(ctx context.Context, evt *events.Message, clie
 }
 
 func handleWebhookForward(ctx context.Context, evt *events.Message, client *whatsmeow.Client, preparedPoll ...*webhookPollPayload) {
-	// Skip webhook for protocol messages that are internal sync messages
 	if protocolMessage := evt.Message.GetProtocolMessage(); protocolMessage != nil {
 		protocolType := protocolMessage.GetType().String()
-		// Only allow REVOKE and MESSAGE_EDIT through - skip all other protocol messages
-		// (HISTORY_SYNC_NOTIFICATION, APP_STATE_SYNC_KEY_SHARE, EPHEMERAL_SYNC_RESPONSE, etc.)
 		switch protocolType {
 		case "REVOKE", "MESSAGE_EDIT":
-			// These are meaningful user actions, allow webhook
 		default:
 			log.Debugf("Skipping webhook for protocol message type: %s", protocolType)
 			return
 		}
 	}
 
-	// Broadcast/status messages are never forwarded, regardless of Chatwoot:
-	// the Chatwoot pipeline rejects status@broadcast (a relayed status post
-	// would only spawn a noise "Status" contact), and plain webhook consumers
-	// must not receive broadcast noise just because Chatwoot is enabled.
 	if strings.Contains(evt.Info.SourceString(), "broadcast") {
 		return
 	}
 
-	// Forward to webhook if any webhook is configured (global or per-device)
-	// The forwardPayloadToConfiguredWebhooks function itself handles the no-op case
 	var pollPayload *webhookPollPayload
 	if len(preparedPoll) > 0 {
 		pollPayload = preparedPoll[0]

@@ -22,6 +22,7 @@ import (
 	"github.com/dresar/gowanew/ui/rest/helpers"
 	"github.com/dresar/gowanew/ui/rest/middleware"
 	"github.com/dresar/gowanew/ui/websocket"
+	"github.com/dresar/gowanew/usecase"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/basicauth"
 	"github.com/gofiber/fiber/v3/middleware/cors"
@@ -187,6 +188,11 @@ func restServer(_ *cobra.Command, _ []string) {
 	// Dashboard: gowa-ui is a separate project released as one HTML file;
 	// serve the runtime-downloaded copy at "/" (behind basic auth like the
 	// rest of the API surface).
+	if botUsecase == nil {
+		botUsecase = usecase.GetGlobalBotService()
+	}
+	rest.InitRestBot(apiGroup, botUsecase, dm, chatStorageRepo)
+
 	uiCtx, uiCancel := context.WithCancel(context.Background())
 	defer uiCancel()
 	registerUIRoute(apiGroup, uiCtx)
