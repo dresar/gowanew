@@ -416,8 +416,22 @@ func (h *BotHandler) ExecuteTool(c fiber.Ctx) error {
 	}
 	var cli *whatsmeow.Client
 	if h.dm != nil {
-		if def := h.dm.DefaultDevice(); def != nil {
-			cli = def.GetClient()
+		devID, _ := req.Parameters["device_id"].(string)
+		if devID == "" {
+			devID = strings.TrimSpace(c.Get("X-Device-Id"))
+		}
+		if devID == "" {
+			devID = strings.TrimSpace(c.Query("device_id"))
+		}
+		if devID != "" {
+			if dev, ok := h.dm.GetDevice(devID); ok && dev != nil {
+				cli = dev.GetClient()
+			}
+		}
+		if cli == nil {
+			if def := h.dm.DefaultDevice(); def != nil {
+				cli = def.GetClient()
+			}
 		}
 	}
 	res, err := h.botUsecase.ExecuteTool(c.Context(), cli, h.chatStorageRepo, req)

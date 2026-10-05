@@ -708,9 +708,128 @@ func TestBotService_HandleGroupInfoPipeline(t *testing.T) {
 	assert.Equal(t, "Bye @OldUser from community", resBye)
 }
 
+func TestBotService_ExecuteTool_AllBranches(t *testing.T) {
+	ctx := context.Background()
+	repo := setupTestBotDB(t)
+	svc := NewBotService(repo)
+
+	tools, err := svc.GetTools(ctx)
+	require.NoError(t, err)
+	assert.Len(t, tools, 4)
+
+	_, err = svc.ExecuteTool(ctx, nil, nil, domainBot.ToolRequest{Tool: ""})
+	assert.Error(t, err)
+
+	_, err = svc.ExecuteTool(ctx, nil, nil, domainBot.ToolRequest{Tool: "unknown_tool"})
+	assert.Error(t, err)
+
+	sendRes, err := svc.ExecuteTool(ctx, nil, nil, domainBot.ToolRequest{
+		Tool: "send_message",
+		Parameters: map[string]any{
+			"recipient": "628123456789@s.whatsapp.net",
+			"message":   "Hello from agent",
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "success", sendRes.Status)
+
+	_, err = svc.ExecuteTool(ctx, nil, nil, domainBot.ToolRequest{
+		Tool: "send_message",
+		Parameters: map[string]any{
+			"recipient": "",
+			"message":   "",
+		},
+	})
+	assert.Error(t, err)
+
+	grpRes, err := svc.ExecuteTool(ctx, nil, nil, domainBot.ToolRequest{
+		Tool: "manage_group",
+		Parameters: map[string]any{
+			"action":    "get_info",
+			"group_jid": "120363000@g.us",
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "completed", grpRes.Output.(map[string]any)["status"])
+
+	_, err = svc.ExecuteTool(ctx, nil, nil, domainBot.ToolRequest{
+		Tool: "manage_group",
+		Parameters: map[string]any{
+			"action":    "invalid_action",
+			"group_jid": "120363000@g.us",
+		},
+	})
+	assert.Error(t, err)
+
+	chatRes, err := svc.ExecuteTool(ctx, nil, nil, domainBot.ToolRequest{
+		Tool: "query_chats",
+		Parameters: map[string]any{
+			"action": "list_chats",
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "list_chats", chatRes.Output.(map[string]any)["action"])
+
+	_, err = svc.ExecuteTool(ctx, nil, nil, domainBot.ToolRequest{
+		Tool: "query_chats",
+		Parameters: map[string]any{
+			"action": "invalid_chat_action",
+		},
+	})
+	assert.Error(t, err)
+
+	createRuleRes, err := svc.ExecuteTool(ctx, nil, nil, domainBot.ToolRequest{
+		Tool: "update_rules",
+		Parameters: map[string]any{
+			"action": "create_rule",
+			"rule_data": map[string]any{
+				"trigger_type":     "contains",
+				"trigger_value":    "discount",
+				"response_type":    "text",
+				"response_content": "Use promo code",
+			},
+		},
+	})
+	require.NoError(t, err)
+	ruleID := createRuleRes.Output.(map[string]any)["rule_id"].(int64)
+
+	updateRuleRes, err := svc.ExecuteTool(ctx, nil, nil, domainBot.ToolRequest{
+		Tool: "update_rules",
+		Parameters: map[string]any{
+			"action":  "update_rule",
+			"rule_id": ruleID,
+			"rule_data": map[string]any{
+				"response_content": "Use promo code DISCOUNT50",
+			},
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "updated", updateRuleRes.Output.(map[string]any)["status"])
+
+	toggleRes, err := svc.ExecuteTool(ctx, nil, nil, domainBot.ToolRequest{
+		Tool: "update_rules",
+		Parameters: map[string]any{
+			"action":  "toggle_rule",
+			"rule_id": ruleID,
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "toggled", toggleRes.Output.(map[string]any)["status"])
+
+	deleteRes, err := svc.ExecuteTool(ctx, nil, nil, domainBot.ToolRequest{
+		Tool: "update_rules",
+		Parameters: map[string]any{
+			"action":  "delete_rule",
+			"rule_id": ruleID,
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "deleted", deleteRes.Output.(map[string]any)["status"])
+}
+
 func TestBot_NokomenCompliance(t *testing.T) {
 	fset := token.NewFileSet()
-	files := []string{"bot.go", "bot_test.go"}
+	files := []string{"bot.go", "bot_ai.go", "bot_test.go"}
 	var violations []string
 
 	for _, file := range files {

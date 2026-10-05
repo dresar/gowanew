@@ -344,8 +344,11 @@ func (s *BotService) ShouldIgnoreMessage(evt *events.Message, client *whatsmeow.
 		return true
 	}
 
-	if client != nil && client.Store != nil && client.Store.ID != nil {
-		if evt.Info.Sender.ToNonAD() == client.Store.ID.ToNonAD() {
+	if client != nil && client.Store != nil {
+		if client.Store.ID != nil && evt.Info.Sender.ToNonAD() == client.Store.ID.ToNonAD() {
+			return true
+		}
+		if !client.Store.LID.IsEmpty() && evt.Info.Sender.ToNonAD() == client.Store.LID.ToNonAD() {
 			return true
 		}
 	}
@@ -656,7 +659,23 @@ func (s *BotService) HandleMessage(ctx context.Context, evt *events.Message, cli
 			}
 			if isAITrigger && prompt != "" {
 				aiRes, aiErr := s.ChatWithAI(ctx, domainBot.ChatRequest{Message: prompt})
-				if aiErr == nil && aiRes != nil && aiRes.Reply != "" {
+				if aiErr != nil {
+					groupJIDStr := ""
+					if isGroup {
+						groupJIDStr = chatJID.String()
+					}
+					_, _ = s.CreateEventLog(ctx, domainBot.CreateEventLogDTO{
+						EventType:       domainBot.EventTypeAIChat,
+						SenderJID:       evt.Info.Sender.String(),
+						GroupJID:        groupJIDStr,
+						IncomingMessage: text,
+						ResponseMessage: "AI error: " + aiErr.Error(),
+						LatencyMS:       time.Since(start).Milliseconds(),
+						Status:          domainBot.LogStatusFailed,
+					})
+					return true, aiErr
+				}
+				if aiRes != nil && aiRes.Reply != "" {
 					replyRule := &domainBot.Rule{
 						ResponseType:    domainBot.ResponseTypeText,
 						ResponseContent: aiRes.Reply,
@@ -739,6 +758,15 @@ func (s *BotService) HandleGroupInfo(ctx context.Context, evt *events.GroupInfo,
 
 	if len(evt.Join) > 0 && groupRule.WelcomeEnabled && groupRule.WelcomeTemplate != "" {
 		for _, participant := range evt.Join {
+			if client.Store != nil {
+				if client.Store.ID != nil && participant.ToNonAD() == client.Store.ID.ToNonAD() {
+					continue
+				}
+				if !client.Store.LID.IsEmpty() && participant.ToNonAD() == client.Store.LID.ToNonAD() {
+					continue
+				}
+			}
+
 			start := time.Now()
 			name := participant.User
 			if client.Store != nil && client.Store.Contacts != nil {
@@ -776,6 +804,15 @@ func (s *BotService) HandleGroupInfo(ctx context.Context, evt *events.GroupInfo,
 
 	if len(evt.Leave) > 0 && groupRule.FarewellEnabled && groupRule.FarewellTemplate != "" {
 		for _, participant := range evt.Leave {
+			if client.Store != nil {
+				if client.Store.ID != nil && participant.ToNonAD() == client.Store.ID.ToNonAD() {
+					continue
+				}
+				if !client.Store.LID.IsEmpty() && participant.ToNonAD() == client.Store.LID.ToNonAD() {
+					continue
+				}
+			}
+
 			start := time.Now()
 			name := participant.User
 			if client.Store != nil && client.Store.Contacts != nil {

@@ -13,6 +13,7 @@ import (
 	domainBot "github.com/dresar/gowanew/domains/bot"
 	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 	whatsappInfrastructure "github.com/dresar/gowanew/infrastructure/whatsapp"
+	pkgUtils "github.com/dresar/gowanew/pkg/utils"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
@@ -179,17 +180,19 @@ func (s *BotService) ExecuteTool(ctx context.Context, client *whatsmeow.Client, 
 
 		msgID := fmt.Sprintf("MOCK-MSG-%d", time.Now().UnixNano())
 		if client != nil {
-			parsedJID, err := types.ParseJID(recipient)
-			if err == nil {
-				msg := &waE2E.Message{Conversation: proto.String(msgText)}
-				resp, sendErr := client.SendMessage(ctx, parsedJID, msg)
-				if sendErr == nil {
-					msgID = resp.ID
-					if chatStorageRepo != nil {
-						senderJID := whatsappInfrastructure.OwnSenderJID(client)
-						_ = chatStorageRepo.StoreSentMessageWithContext(ctx, msgID, senderJID, parsedJID.String(), msgText, time.Now(), nil)
-					}
-				}
+			parsedJID, err := pkgUtils.ParseJID(recipient)
+			if err != nil {
+				return nil, fmt.Errorf("invalid recipient JID %q: %w", recipient, err)
+			}
+			msg := &waE2E.Message{Conversation: proto.String(msgText)}
+			resp, sendErr := client.SendMessage(ctx, parsedJID, msg)
+			if sendErr != nil {
+				return nil, fmt.Errorf("failed to send message: %w", sendErr)
+			}
+			msgID = resp.ID
+			if chatStorageRepo != nil {
+				senderJID := whatsappInfrastructure.OwnSenderJID(client)
+				_ = chatStorageRepo.StoreSentMessageWithContext(ctx, msgID, senderJID, parsedJID.String(), msgText, time.Now(), nil)
 			}
 		}
 
@@ -225,52 +228,92 @@ func (s *BotService) ExecuteTool(ctx context.Context, client *whatsmeow.Client, 
 			}
 		}
 
+		groupDetails := map[string]any{}
 		if client != nil {
-			parsedGroup, err := types.ParseJID(groupJID)
-			if err == nil {
-				var pJIDs []types.JID
-				for _, p := range participants {
-					if pj, perr := types.ParseJID(p); perr == nil {
-						pJIDs = append(pJIDs, pj)
+			parsedGroup, err := pkgUtils.ParseJID(groupJID)
+			if err != nil {
+				return nil, fmt.Errorf("invalid group JID %q: %w", groupJID, err)
+			}
+
+			var pJIDs []types.JID
+			for _, p := range participants {
+				if pj, perr := pkgUtils.ParseJID(p); perr == nil {
+					pJIDs = append(pJIDs, pj)
+				}
+			}
+
+			switch action {
+			case "get_info":
+				info, err := client.GetGroupInfo(ctx, parsedGroup)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get group info: %w", err)
+				}
+				partList := make([]map[string]any, 0, len(info.Participants))
+				for _, p := range info.Participants {
+					partList = append(partList, map[string]any{
+						"jid":            p.JID.String(),
+						"is_admin":       p.IsAdmin,
+						"is_super_admin": p.IsSuperAdmin,
+					})
+				}
+				groupDetails["name"] = info.GroupName.Name
+				groupDetails["topic"] = info.Topic
+				groupDetails["participants_detail"] = partList
+			case "add":
+				if len(pJIDs) > 0 {
+					if _, err := client.UpdateGroupParticipants(ctx, parsedGroup, pJIDs, whatsmeow.ParticipantChangeAdd); err != nil {
+						return nil, fmt.Errorf("failed to add participants: %w", err)
 					}
 				}
-				switch action {
-				case "add":
-					if len(pJIDs) > 0 {
-						_, _ = client.UpdateGroupParticipants(ctx, parsedGroup, pJIDs, whatsmeow.ParticipantChangeAdd)
+			case "remove":
+				if len(pJIDs) > 0 {
+					if _, err := client.UpdateGroupParticipants(ctx, parsedGroup, pJIDs, whatsmeow.ParticipantChangeRemove); err != nil {
+						return nil, fmt.Errorf("failed to remove participants: %w", err)
 					}
-				case "remove":
-					if len(pJIDs) > 0 {
-						_, _ = client.UpdateGroupParticipants(ctx, parsedGroup, pJIDs, whatsmeow.ParticipantChangeRemove)
+				}
+			case "promote":
+				if len(pJIDs) > 0 {
+					if _, err := client.UpdateGroupParticipants(ctx, parsedGroup, pJIDs, whatsmeow.ParticipantChangePromote); err != nil {
+						return nil, fmt.Errorf("failed to promote participants: %w", err)
 					}
-				case "promote":
-					if len(pJIDs) > 0 {
-						_, _ = client.UpdateGroupParticipants(ctx, parsedGroup, pJIDs, whatsmeow.ParticipantChangePromote)
+				}
+			case "demote":
+				if len(pJIDs) > 0 {
+					if _, err := client.UpdateGroupParticipants(ctx, parsedGroup, pJIDs, whatsmeow.ParticipantChangeDemote); err != nil {
+						return nil, fmt.Errorf("failed to demote participants: %w", err)
 					}
-				case "demote":
-					if len(pJIDs) > 0 {
-						_, _ = client.UpdateGroupParticipants(ctx, parsedGroup, pJIDs, whatsmeow.ParticipantChangeDemote)
+				}
+			case "revoke_link":
+				link, err := client.GetGroupInviteLink(ctx, parsedGroup, true)
+				if err != nil {
+					return nil, fmt.Errorf("failed to revoke invite link: %w", err)
+				}
+				groupDetails["new_invite_link"] = link
+			case "set_name":
+				if val, ok := req.Parameters["value"].(string); ok && val != "" {
+					if err := client.SetGroupName(ctx, parsedGroup, val); err != nil {
+						return nil, fmt.Errorf("failed to set group name: %w", err)
 					}
-				case "revoke_link":
-					_, _ = client.GetGroupInviteLink(ctx, parsedGroup, true)
-				case "set_name":
-					if val, ok := req.Parameters["value"].(string); ok && val != "" {
-						_ = client.SetGroupName(ctx, parsedGroup, val)
-					}
-				case "set_topic":
-					if val, ok := req.Parameters["value"].(string); ok && val != "" {
-						_ = client.SetGroupTopic(ctx, parsedGroup, "", "", val)
+				}
+			case "set_topic":
+				if val, ok := req.Parameters["value"].(string); ok && val != "" {
+					if err := client.SetGroupTopic(ctx, parsedGroup, "", "", val); err != nil {
+						return nil, fmt.Errorf("failed to set group topic: %w", err)
 					}
 				}
 			}
 		}
 
-		output = map[string]any{
+		outMap := map[string]any{
 			"action":       action,
 			"group_jid":    groupJID,
 			"participants": participants,
 			"status":       "completed",
 		}
+		for k, v := range groupDetails {
+			outMap[k] = v
+		}
+		output = outMap
 
 	case "query_chats":
 		action, _ := req.Parameters["action"].(string)
@@ -284,9 +327,78 @@ func (s *BotService) ExecuteTool(ctx context.Context, client *whatsmeow.Client, 
 			return nil, fmt.Errorf("invalid action %q for query_chats", action)
 		}
 
-		items := []map[string]any{
-			{"jid": "user1@s.whatsapp.net", "name": "Alice", "unread": 0},
-			{"jid": "group1@g.us", "name": "Dev Team", "unread": 2},
+		items := make([]map[string]any, 0)
+		switch action {
+		case "list_chats":
+			if chatStorageRepo != nil {
+				var filter domainChatStorage.ChatFilter
+				if limit, ok := req.Parameters["limit"].(float64); ok && limit > 0 {
+					filter.Limit = int(limit)
+				} else if limitInt, ok := req.Parameters["limit"].(int); ok && limitInt > 0 {
+					filter.Limit = limitInt
+				}
+				if q, ok := req.Parameters["query"].(string); ok && q != "" {
+					filter.SearchName = q
+				}
+				chats, err := chatStorageRepo.GetChats(&filter)
+				if err == nil {
+					for _, c := range chats {
+						items = append(items, map[string]any{
+							"jid":               c.JID,
+							"name":              c.Name,
+							"last_message_time": c.LastMessageTime.Format(time.RFC3339),
+							"archived":          c.Archived,
+						})
+					}
+				}
+			}
+		case "get_messages":
+			chatJID, _ := req.Parameters["chat_jid"].(string)
+			if chatJID == "" {
+				chatJID, _ = req.Parameters["jid"].(string)
+			}
+			if chatStorageRepo != nil && chatJID != "" {
+				var filter domainChatStorage.MessageFilter
+				filter.ChatJID = chatJID
+				filter.Limit = 50
+				if limit, ok := req.Parameters["limit"].(float64); ok && limit > 0 {
+					filter.Limit = int(limit)
+				} else if limitInt, ok := req.Parameters["limit"].(int); ok && limitInt > 0 {
+					filter.Limit = limitInt
+				}
+				msgs, err := chatStorageRepo.GetMessages(&filter)
+				if err == nil {
+					for _, m := range msgs {
+						items = append(items, map[string]any{
+							"id":         m.ID,
+							"sender":     m.Sender,
+							"content":    m.Content,
+							"timestamp":  m.Timestamp.Format(time.RFC3339),
+							"is_from_me": m.IsFromMe,
+							"media_type": m.MediaType,
+						})
+					}
+				}
+			}
+		case "list_contacts":
+			if client != nil && client.Store != nil && client.Store.Contacts != nil {
+				contacts, err := client.Store.Contacts.GetAllContacts(ctx)
+				if err == nil {
+					for jid, contact := range contacts {
+						name := contact.FullName
+						if name == "" {
+							name = contact.PushName
+						}
+						if name == "" {
+							name = contact.BusinessName
+						}
+						items = append(items, map[string]any{
+							"jid":  jid.String(),
+							"name": name,
+						})
+					}
+				}
+			}
 		}
 
 		output = map[string]any{
@@ -338,6 +450,54 @@ func (s *BotService) ExecuteTool(ctx context.Context, client *whatsmeow.Client, 
 				return nil, err
 			}
 			output = map[string]any{"action": "create_rule", "rule_id": rule.ID, "status": "created"}
+
+		case "update_rule":
+			rawID, ok := req.Parameters["rule_id"]
+			if !ok {
+				return nil, fmt.Errorf("rule_id is required for update_rule")
+			}
+			var ruleID int64
+			switch v := rawID.(type) {
+			case float64:
+				ruleID = int64(v)
+			case int:
+				ruleID = int64(v)
+			case int64:
+				ruleID = v
+			}
+			if ruleData == nil {
+				return nil, fmt.Errorf("rule_data is required for update_rule")
+			}
+			var updateReq domainBot.UpdateRuleRequest
+			if tType, ok := ruleData["trigger_type"].(string); ok && tType != "" {
+				tt := domainBot.TriggerType(tType)
+				updateReq.TriggerType = &tt
+			}
+			if tVal, ok := ruleData["trigger_value"].(string); ok {
+				updateReq.TriggerValue = &tVal
+			}
+			if scope, ok := ruleData["scope"].(string); ok && scope != "" {
+				sc := domainBot.Scope(scope)
+				updateReq.Scope = &sc
+			}
+			if rType, ok := ruleData["response_type"].(string); ok && rType != "" {
+				rt := domainBot.ResponseType(rType)
+				updateReq.ResponseType = &rt
+			}
+			if rContent, ok := ruleData["response_content"].(string); ok {
+				updateReq.ResponseContent = &rContent
+			}
+			if mURL, ok := ruleData["media_url"].(string); ok {
+				updateReq.MediaURL = &mURL
+			}
+			if isActive, ok := ruleData["is_active"].(bool); ok {
+				updateReq.IsActive = &isActive
+			}
+			rule, err := s.UpdateRule(ctx, ruleID, updateReq)
+			if err != nil {
+				return nil, err
+			}
+			output = map[string]any{"action": "update_rule", "rule": rule, "status": "updated"}
 
 		case "toggle_rule":
 			rawID, ok := req.Parameters["rule_id"]
