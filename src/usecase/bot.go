@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"regexp"
@@ -62,6 +63,8 @@ type IBotUsecase interface {
 	ClearEventLogs(ctx context.Context) error
 
 	MatchRule(rules []*domainBot.Rule, text string, isGroup bool) *domainBot.Rule
+	MatchRuleForSender(rules []*domainBot.Rule, text string, isGroup bool, senderJID string) *domainBot.Rule
+	AutoTagPacarRules(ctx context.Context) (int, error)
 	ModerateMessage(ctx context.Context, groupJID string, senderJID string, messageText string) (*ModerationResult, bool)
 	FormatWelcome(template string, userName string, groupName string) string
 	FormatFarewell(template string, userName string, groupName string) string
@@ -164,6 +167,7 @@ func (s *BotService) CreateRule(ctx context.Context, req domainBot.CreateRuleReq
 	rule := &domainBot.Rule{
 		TriggerType:     req.TriggerType,
 		TriggerValue:    req.TriggerValue,
+		RecipientJID:    strings.TrimSpace(req.RecipientJID),
 		Scope:           req.Scope,
 		ResponseType:    req.ResponseType,
 		ResponseContent: req.ResponseContent,
@@ -371,13 +375,79 @@ func safeRegexMatch(pattern, text string) (matched bool) {
 	return re.MatchString(text)
 }
 
+func cleanPhoneDigits(val string) string {
+	var sb strings.Builder
+	for _, r := range val {
+		if r >= '0' && r <= '9' {
+			sb.WriteRune(r)
+		}
+	}
+	return sb.String()
+}
+
 func (s *BotService) MatchRule(rules []*domainBot.Rule, text string, isGroup bool) *domainBot.Rule {
+	return s.MatchRuleForSender(rules, text, isGroup, "")
+}
+
+func (s *BotService) MatchRuleForSender(rules []*domainBot.Rule, text string, isGroup bool, senderJID string) *domainBot.Rule {
 	cleanText := strings.TrimSpace(text)
 	lowerText := strings.ToLower(cleanText)
+	senderDigits := cleanPhoneDigits(senderJID)
+
+	isIndahSender := senderDigits != "" && (strings.Contains(senderDigits, "6285216149732") || strings.Contains(senderJID, "6285216149732"))
+
+	if isIndahSender {
+		for _, rule := range rules {
+			if !rule.IsActive {
+				continue
+			}
+			ruleTarget := strings.TrimSpace(rule.RecipientJID)
+			ruleTargetDigits := cleanPhoneDigits(ruleTarget)
+			if ruleTargetDigits == "" || (!strings.Contains(ruleTargetDigits, "6285216149732") && !strings.Contains(ruleTarget, "6285216149732")) {
+				continue
+			}
+			if rule.Scope == domainBot.ScopePrivate && isGroup {
+				continue
+			}
+			if rule.Scope == domainBot.ScopeGroup && !isGroup {
+				continue
+			}
+
+			matched := false
+			lowerTrigger := strings.ToLower(strings.TrimSpace(rule.TriggerValue))
+
+			switch rule.TriggerType {
+			case domainBot.TriggerExact:
+				matched = strings.EqualFold(cleanText, strings.TrimSpace(rule.TriggerValue))
+			case domainBot.TriggerContains:
+				matched = strings.Contains(lowerText, lowerTrigger)
+			case domainBot.TriggerStartsWith:
+				matched = strings.HasPrefix(lowerText, lowerTrigger)
+			case domainBot.TriggerRegex:
+				matched = safeRegexMatch(rule.TriggerValue, cleanText)
+			}
+
+			if matched {
+				return rule
+			}
+		}
+	}
 
 	for _, rule := range rules {
 		if !rule.IsActive {
 			continue
+		}
+
+		ruleTarget := strings.TrimSpace(rule.RecipientJID)
+		ruleTargetDigits := cleanPhoneDigits(ruleTarget)
+
+		if ruleTargetDigits != "" && ruleTarget != "all" && ruleTarget != "global" {
+			if senderDigits == "" {
+				continue
+			}
+			if !strings.Contains(senderDigits, ruleTargetDigits) && !strings.Contains(ruleTargetDigits, senderDigits) {
+				continue
+			}
 		}
 
 		if rule.Scope == domainBot.ScopePrivate && isGroup {
@@ -407,6 +477,43 @@ func (s *BotService) MatchRule(rules []*domainBot.Rule, text string, isGroup boo
 	}
 
 	return nil
+}
+
+func (s *BotService) AutoTagPacarRules(ctx context.Context) (int, error) {
+	rules, err := s.repo.ListRules(ctx, domainBot.RuleFilter{})
+	if err != nil {
+		return 0, err
+	}
+	pacarKeywords := []string{
+		"sayang", "ayang", "ndah", "indah", "kangen", "miss you", "love you",
+		"pacar", "cinta", "cium", "peluk", "jemput", "jalan yuk", "ketemu",
+		"ngambek", "bobo", "tidur yuk", "tidur ya", "makan ya", "jangan begadang",
+		"manja", "cantik", "gemes",
+	}
+	updatedCount := 0
+	targetJID := "6285216149732@s.whatsapp.net"
+	for _, r := range rules {
+		if strings.TrimSpace(r.RecipientJID) != "" {
+			continue
+		}
+		comb := strings.ToLower(r.TriggerValue + " " + r.ResponseContent)
+		isPacar := false
+		for _, kw := range pacarKeywords {
+			if strings.Contains(comb, kw) {
+				isPacar = true
+				break
+			}
+		}
+		if isPacar {
+			_, err := s.repo.UpdateRule(ctx, r.ID, domainBot.UpdateRuleRequest{
+				RecipientJID: &targetJID,
+			})
+			if err == nil {
+				updatedCount++
+			}
+		}
+	}
+	return updatedCount, nil
 }
 
 func (s *BotService) ModerateMessage(ctx context.Context, groupJID string, senderJID string, messageText string) (*ModerationResult, bool) {
@@ -645,20 +752,220 @@ func (s *BotService) HandleMessage(ctx context.Context, evt *events.Message, cli
 
 	activeBool := true
 	rules, _ := s.repo.ListRules(ctx, domainBot.RuleFilter{IsActive: &activeBool})
-	matchedRule := s.MatchRule(rules, text, isGroup)
+	matchedRule := s.MatchRuleForSender(rules, text, isGroup, evt.Info.Sender.String())
 	if matchedRule == nil {
-		cfg, cfgErr := s.repo.GetAIConfig(ctx)
+		lowerText := strings.ToLower(strings.TrimSpace(text))
+		if lowerText == "!menu" || lowerText == "/menu" || lowerText == "!help" {
+			menuText := `*🤖 DAFTAR MENU BOT WHATSAPP*
+
+• *!menu* - Tampilkan daftar perintah bot ini
+• *!ping* - Tes kecepatan respon bot (latensi ms)
+• *!ai <pesan>* - Mengobrol santai dengan asisten AI pintar
+• *!quote* - Kutipan motivasi & kata bijak harian
+• *!calc <ekspresi>* - Hitung kalkulasi matematika instan
+• *!info* - Info bot WhatsApp
+
+_Ketik perintah di atas untuk menggunakannya ya!_`
+			menuRule := &domainBot.Rule{
+				ResponseType:    domainBot.ResponseTypeText,
+				ResponseContent: menuText,
+			}
+			msgID, dispatchErr := s.DispatchResponse(ctx, client, chatJID, menuRule)
+			if dispatchErr == nil && chatStorageRepo != nil && client != nil {
+				senderJID := whatsappInfrastructure.OwnSenderJID(client)
+				_ = chatStorageRepo.StoreSentMessageWithContext(ctx, msgID, senderJID, chatJID.String(), menuText, time.Now(), nil)
+			}
+			groupJIDStr := ""
+			if isGroup {
+				groupJIDStr = chatJID.String()
+			}
+			_, _ = s.CreateEventLog(ctx, domainBot.CreateEventLogDTO{
+				EventType:       domainBot.EventTypeAutoReply,
+				SenderJID:       evt.Info.Sender.String(),
+				GroupJID:        groupJIDStr,
+				IncomingMessage: text,
+				ResponseMessage: menuText,
+				LatencyMS:       time.Since(start).Milliseconds(),
+				Status:          domainBot.LogStatusSuccess,
+			})
+			return true, dispatchErr
+		}
+
+		if lowerText == "!ping" || lowerText == "/ping" {
+			latencyMs := time.Since(start).Milliseconds()
+			pongText := fmt.Sprintf("Pong! 🏓 Kecepatan respon: %d ms", latencyMs)
+			pongRule := &domainBot.Rule{
+				ResponseType:    domainBot.ResponseTypeText,
+				ResponseContent: pongText,
+			}
+			msgID, dispatchErr := s.DispatchResponse(ctx, client, chatJID, pongRule)
+			if dispatchErr == nil && chatStorageRepo != nil && client != nil {
+				senderJID := whatsappInfrastructure.OwnSenderJID(client)
+				_ = chatStorageRepo.StoreSentMessageWithContext(ctx, msgID, senderJID, chatJID.String(), pongText, time.Now(), nil)
+			}
+			groupJIDStr := ""
+			if isGroup {
+				groupJIDStr = chatJID.String()
+			}
+			_, _ = s.CreateEventLog(ctx, domainBot.CreateEventLogDTO{
+				EventType:       domainBot.EventTypeAutoReply,
+				SenderJID:       evt.Info.Sender.String(),
+				GroupJID:        groupJIDStr,
+				IncomingMessage: text,
+				ResponseMessage: pongText,
+				LatencyMS:       time.Since(start).Milliseconds(),
+				Status:          domainBot.LogStatusSuccess,
+			})
+			return true, dispatchErr
+		}
+
+		if lowerText == "!info" || lowerText == "/info" {
+			infoText := `*ℹ️ INFORMASI BOT WHATSAPP*
+
+Status: Online & Siap Melayani
+Model AI: Step-5-Preview (Bynara)
+Fitur: Smart Context Memory (100 Pesan) + Supermemory`
+			infoRule := &domainBot.Rule{
+				ResponseType:    domainBot.ResponseTypeText,
+				ResponseContent: infoText,
+			}
+			msgID, dispatchErr := s.DispatchResponse(ctx, client, chatJID, infoRule)
+			if dispatchErr == nil && chatStorageRepo != nil && client != nil {
+				senderJID := whatsappInfrastructure.OwnSenderJID(client)
+				_ = chatStorageRepo.StoreSentMessageWithContext(ctx, msgID, senderJID, chatJID.String(), infoText, time.Now(), nil)
+			}
+			return true, dispatchErr
+		}
+
+		if lowerText == "!quote" || lowerText == "/quote" {
+			quotes := []string{
+				`"Kesuksesan berawal dari langkah kecil yang konsisten setiap hari."`,
+				`"Hari ini adalah kesempatan terbaik untuk menjadi lebih baik dari kemarin."`,
+				`"Fokus pada proses, hasil terbaik akan mengikuti dengan sendirinya."`,
+				`"Jangan menunggu waktu yang sempurna, mulailah sekarang dan sempurnakan jalannya."`,
+			}
+			pickedQuote := quotes[time.Now().UnixNano()%int64(len(quotes))]
+			quoteRule := &domainBot.Rule{
+				ResponseType:    domainBot.ResponseTypeText,
+				ResponseContent: "✨ *KATA BIJAK HARI INI:*\n\n" + pickedQuote,
+			}
+			msgID, dispatchErr := s.DispatchResponse(ctx, client, chatJID, quoteRule)
+			if dispatchErr == nil && chatStorageRepo != nil && client != nil {
+				senderJID := whatsappInfrastructure.OwnSenderJID(client)
+				_ = chatStorageRepo.StoreSentMessageWithContext(ctx, msgID, senderJID, chatJID.String(), quoteRule.ResponseContent, time.Now(), nil)
+			}
+			return true, dispatchErr
+		}
+
+		if strings.HasPrefix(lowerText, "!calc ") || strings.HasPrefix(lowerText, "/calc ") {
+			expr := strings.TrimSpace(text[6:])
+			calcPrompt := fmt.Sprintf("Hitung matematika berikut secara tepat dan berikan hasil akhirnya langsung dengan ringkas: %s", expr)
+			calcRes, calcErr := s.ChatWithAI(ctx, domainBot.ChatRequest{
+				Message:   calcPrompt,
+				SenderJID: evt.Info.Sender.String(),
+			})
+			if calcErr == nil && calcRes != nil && calcRes.Reply != "" {
+				calcRule := &domainBot.Rule{
+					ResponseType:    domainBot.ResponseTypeText,
+					ResponseContent: fmt.Sprintf("🔢 *Hasil Hitung (%s):*\n%s", expr, calcRes.Reply),
+				}
+				msgID, dispatchErr := s.DispatchResponse(ctx, client, chatJID, calcRule)
+				if dispatchErr == nil && chatStorageRepo != nil && client != nil {
+					senderJID := whatsappInfrastructure.OwnSenderJID(client)
+					_ = chatStorageRepo.StoreSentMessageWithContext(ctx, msgID, senderJID, chatJID.String(), calcRule.ResponseContent, time.Now(), nil)
+				}
+				return true, dispatchErr
+			}
+		}
+
+		cfg, cfgErr := s.GetAIConfig(ctx)
 		if cfgErr == nil && cfg != nil {
+			senderStr := evt.Info.Sender.String()
+			chatStr := chatJID.String()
+
+			isIgnored := false
+			for _, ign := range config.BotAIIgnoreJIDs {
+				if ign != "" && (strings.EqualFold(ign, senderStr) || strings.EqualFold(ign, chatStr) || strings.Contains(senderStr, ign) || strings.Contains(chatStr, ign)) {
+					isIgnored = true
+					break
+				}
+			}
+
+			if !isIgnored && len(config.BotAIAllowJIDs) > 0 {
+				isAllowed := false
+				for _, allow := range config.BotAIAllowJIDs {
+					if allow != "" && (strings.EqualFold(allow, senderStr) || strings.EqualFold(allow, chatStr) || strings.Contains(senderStr, allow) || strings.Contains(chatStr, allow)) {
+						isAllowed = true
+						break
+					}
+				}
+				if !isAllowed {
+					isIgnored = true
+				}
+			}
+
 			isAITrigger := false
 			prompt := text
-			if cfg.TriggerPrefix != "" && strings.HasPrefix(text, cfg.TriggerPrefix) {
-				isAITrigger = true
-				prompt = strings.TrimSpace(strings.TrimPrefix(text, cfg.TriggerPrefix))
-			} else if cfg.AutoReplyEnabled {
-				isAITrigger = true
+			if !isIgnored {
+				if cfg.TriggerPrefix != "" && strings.HasPrefix(text, cfg.TriggerPrefix) {
+					isAITrigger = true
+					prompt = strings.TrimSpace(strings.TrimPrefix(text, cfg.TriggerPrefix))
+				} else if cfg.AutoReplyEnabled {
+					isAITrigger = true
+				}
 			}
 			if isAITrigger && prompt != "" {
-				aiRes, aiErr := s.ChatWithAI(ctx, domainBot.ChatRequest{Message: prompt})
+				if client != nil {
+					_ = client.SendChatPresence(ctx, chatJID, types.ChatPresenceComposing, types.ChatPresenceMediaText)
+					defer func() {
+						_ = client.SendChatPresence(ctx, chatJID, types.ChatPresencePaused, types.ChatPresenceMediaText)
+					}()
+				}
+
+				senderName := strings.TrimSpace(evt.Info.PushName)
+				if senderName == "" && client != nil && client.Store != nil && client.Store.Contacts != nil {
+					contact, _ := client.Store.Contacts.GetContact(ctx, evt.Info.Sender)
+					if contact.Found {
+						if contact.FullName != "" {
+							senderName = contact.FullName
+						} else if contact.BusinessName != "" {
+							senderName = contact.BusinessName
+						} else if contact.PushName != "" {
+							senderName = contact.PushName
+						}
+					}
+				}
+
+				var historyList []domainBot.ChatMessage
+				if chatStorageRepo != nil {
+					storedMsgs, err := chatStorageRepo.GetMessages(&domainChatStorage.MessageFilter{
+						ChatJID: chatJID.String(),
+						Limit:   100,
+					})
+					if err == nil && len(storedMsgs) > 0 {
+						for i := len(storedMsgs) - 1; i >= 0; i-- {
+							m := storedMsgs[i]
+							if m == nil || strings.TrimSpace(m.Content) == "" || m.ID == evt.Info.ID {
+								continue
+							}
+							role := "user"
+							if m.IsFromMe {
+								role = "assistant"
+							}
+							historyList = append(historyList, domainBot.ChatMessage{
+								Role:    role,
+								Content: m.Content,
+							})
+						}
+					}
+				}
+
+				aiRes, aiErr := s.ChatWithAI(ctx, domainBot.ChatRequest{
+					Message:     prompt,
+					SenderJID:   evt.Info.Sender.String(),
+					SenderName:  senderName,
+					ChatHistory: historyList,
+				})
 				if aiErr != nil {
 					groupJIDStr := ""
 					if isGroup {

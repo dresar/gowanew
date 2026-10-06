@@ -11,6 +11,8 @@ type ChatRequest struct {
 	Model       string        `json:"model,omitempty"`
 	Temperature *float64      `json:"temperature,omitempty"`
 	Stream      bool          `json:"stream,omitempty"`
+	SenderJID   string        `json:"sender_jid,omitempty"`
+	SenderName  string        `json:"sender_name,omitempty"`
 }
 
 type ChatUsage struct {

@@ -117,6 +117,13 @@ var migrations = []schemaMigration{
 			`CREATE INDEX IF NOT EXISTS idx_bot_event_logs_group_jid ON bot_event_logs(group_jid)`,
 		},
 	},
+	{
+		version: 9,
+		statements: []string{
+			`ALTER TABLE bot_rules ADD COLUMN recipient_jid TEXT NOT NULL DEFAULT ''`,
+			`CREATE INDEX IF NOT EXISTS idx_bot_rules_recipient_jid ON bot_rules(recipient_jid)`,
+		},
+	},
 }
 
 func RunMigrations(ctx context.Context, db *sql.DB) error {

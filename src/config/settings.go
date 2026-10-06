@@ -22,7 +22,7 @@ var (
 	// project released as a single HTML file; gowa fetches the latest release
 	// asset and serves it at "/".
 	AppUIEnabled        = true
-	AppUIAutoUpdate     = true
+	AppUIAutoUpdate     = false
 	AppUIRepo           = "dresar/gowa-ui"
 	AppUIAssetName      = "gowa-ui.html"
 	AppUIUpdateInterval = 3 * time.Hour
@@ -165,4 +165,19 @@ var (
 	// message when the opposite side reports deletion.
 	ChatwootMessageRead   = false
 	ChatwootMessageDelete = false
+
+	// Bot AI & Supermemory Settings
+	BotAIProvider         = "openai"
+	BotAIBaseURL          = "https://router.bynara.id/v1"
+	BotAIAPIKey           = "sk-nry-mED4wjbjt8y8kczAjJ2DiXXsgWANbMUSjZuBxkEOvrc"
+	BotAIModel            = "step-5-preview"
+	BotAISystemPrompt     = ""
+	BotAITemperature      = 0.7
+	BotAITriggerPrefix    = ""
+	BotAIAutoReplyEnabled = false
+	BotAIAllowJIDs        []string
+	BotAIIgnoreJIDs       []string
+
+	SupermemoryAPIKey     = "sm_owY7kWXPSLSKsKftTxyc7j_Q6HGq7GX8rT9T7Ii2M8UBhHgcKQ8b0IDWbrdL1iA92dbd2aK6V3OJbwDIpXI3Mbq"
+	SupermemoryEnabled    = true
 )

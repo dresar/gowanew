@@ -28,6 +28,8 @@ func InitRestBot(app fiber.Router, botUsecase usecase.IBotUsecase, dm *whatsapp.
 
 	app.Get("/bot/rules", h.ListRules)
 	app.Post("/bot/rules", h.CreateRule)
+	app.Post("/bot/rules/import", h.ImportRules)
+	app.Post("/bot/rules/auto-tag-pacar", h.AutoTagPacar)
 	app.Get("/bot/rules/:id", h.GetRule)
 	app.Put("/bot/rules/:id", h.UpdateRule)
 	app.Delete("/bot/rules/:id", h.DeleteRule)
@@ -62,6 +64,9 @@ func (h *BotHandler) ListRules(c fiber.Ctx) error {
 	if scopeStr := c.Query("scope"); scopeStr != "" {
 		s := domainBot.Scope(scopeStr)
 		filter.Scope = &s
+	}
+	if recipient := c.Query("recipient_jid"); recipient != "" {
+		filter.RecipientJID = &recipient
 	}
 	filter.Search = c.Query("search")
 	if limitStr := c.Query("limit"); limitStr != "" {
@@ -119,6 +124,51 @@ func (h *BotHandler) CreateRule(c fiber.Ctx) error {
 		Code:    "SUCCESS",
 		Message: "rule created",
 		Results: rule,
+	})
+}
+
+func (h *BotHandler) ImportRules(c fiber.Ctx) error {
+	var reqs []domainBot.CreateRuleRequest
+	if err := c.Bind().Body(&reqs); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
+			Code:    "BAD_REQUEST",
+			Message: "invalid json array",
+		})
+	}
+	if len(reqs) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
+			Code:    "BAD_REQUEST",
+			Message: "empty rules array",
+		})
+	}
+
+	imported := 0
+	for _, req := range reqs {
+		if strings.TrimSpace(req.TriggerValue) == "" || strings.TrimSpace(req.ResponseContent) == "" {
+			continue
+		}
+		if req.Scope == "" {
+			req.Scope = domainBot.ScopeAll
+		}
+		if req.ResponseType == "" {
+			req.ResponseType = domainBot.ResponseTypeText
+		}
+		if req.TriggerType == "" {
+			req.TriggerType = domainBot.TriggerContains
+		}
+		_, err := h.botUsecase.CreateRule(c.Context(), req)
+		if err == nil {
+			imported++
+		}
+	}
+
+	return c.JSON(utils.ResponseData{
+		Code:    "SUCCESS",
+		Message: "rules imported",
+		Results: map[string]any{
+			"total":    len(reqs),
+			"imported": imported,
+		},
 	})
 }
 
@@ -231,6 +281,23 @@ func (h *BotHandler) ToggleRule(c fiber.Ctx) error {
 		Code:    "SUCCESS",
 		Message: "rule toggled",
 		Results: rule,
+	})
+}
+
+func (h *BotHandler) AutoTagPacar(c fiber.Ctx) error {
+	count, err := h.botUsecase.AutoTagPacarRules(c.Context())
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(utils.ResponseData{
+			Code:    "ERROR",
+			Message: err.Error(),
+		})
+	}
+	return c.JSON(utils.ResponseData{
+		Code:    "SUCCESS",
+		Message: "berhasil menandai balasan khusus pacar",
+		Results: map[string]any{
+			"updated": count,
+		},
 	})
 }
 

@@ -245,6 +245,14 @@ func (m *mockBotUsecase) MatchRule(_ []*domainBot.Rule, _ string, _ bool) *domai
 	return nil
 }
 
+func (m *mockBotUsecase) MatchRuleForSender(_ []*domainBot.Rule, _ string, _ bool, _ string) *domainBot.Rule {
+	return nil
+}
+
+func (m *mockBotUsecase) AutoTagPacarRules(_ context.Context) (int, error) {
+	return 0, nil
+}
+
 func (m *mockBotUsecase) ModerateMessage(_ context.Context, _, _ string, _ string) (*usecase.ModerationResult, bool) {
 	return nil, false
 }

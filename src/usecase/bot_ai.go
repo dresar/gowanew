@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dresar/gowanew/config"
 	domainBot "github.com/dresar/gowanew/domains/bot"
 	domainChatStorage "github.com/dresar/gowanew/domains/chatstorage"
 	whatsappInfrastructure "github.com/dresar/gowanew/infrastructure/whatsapp"
@@ -21,7 +22,48 @@ import (
 )
 
 func (s *BotService) GetAIConfig(ctx context.Context) (*domainBot.AIConfig, error) {
-	return s.repo.GetAIConfig(ctx)
+	cfg, err := s.repo.GetAIConfig(ctx)
+	if err != nil && err != domainBot.ErrAIConfigNotFound {
+		return nil, err
+	}
+	if cfg == nil {
+		cfg = &domainBot.AIConfig{
+			ID:               1,
+			Provider:         "openai",
+			BaseURL:          "https://api.openai.com/v1",
+			APIKey:           "",
+			Model:            "gpt-4o-mini",
+			SystemPrompt:     "",
+			Temperature:      0.7,
+			TriggerPrefix:    "!ai",
+			AutoReplyEnabled: false,
+		}
+	}
+	if config.BotAIProvider != "" {
+		cfg.Provider = config.BotAIProvider
+	}
+	if config.BotAIBaseURL != "" {
+		cfg.BaseURL = config.BotAIBaseURL
+	}
+	if config.BotAIAPIKey != "" {
+		cfg.APIKey = config.BotAIAPIKey
+	}
+	if config.BotAIModel != "" {
+		cfg.Model = config.BotAIModel
+	}
+	if config.BotAISystemPrompt != "" {
+		cfg.SystemPrompt = config.BotAISystemPrompt
+	}
+	if config.BotAITemperature > 0 {
+		cfg.Temperature = config.BotAITemperature
+	}
+	if config.BotAITriggerPrefix != "" {
+		cfg.TriggerPrefix = config.BotAITriggerPrefix
+	}
+	if config.BotAIAutoReplyEnabled {
+		cfg.AutoReplyEnabled = true
+	}
+	return cfg, nil
 }
 
 func (s *BotService) UpdateAIConfig(ctx context.Context, req domainBot.UpdateAIConfigRequest) (*domainBot.AIConfig, error) {
@@ -37,12 +79,130 @@ func (s *BotService) GetTools(ctx context.Context) ([]domainBot.ToolDefinition, 
 	}, nil
 }
 
+const defaultAntiSlopPrompt = `Kamu adalah asisten pribadi yang membalas chat WhatsApp dengan gaya super santai, non-formal, luwes, dan seperti teman akrab orang Indonesia sehari-hari.
+Aturan penting:
+- Gunakan bahasa percakapan sehari-hari (contoh: "halo", "oke sip", "siap", "bentar ya", "ada apa nih?", "kenapa bro?", "santai aja", "gas").
+- DILARANG KERAS berbicara kaku seperti bot, customer service, atau AI formal (JANGAN gunakan: "Tentu saja!", "Sebagai asisten AI", "Ada yang bisa saya bantu?", "Semoga membantu", "Halo, bagaimana kabarmu?").
+- Jika lawan bicara bertanya apakah kamu kenal dia (misal: "kamu kenal aku?"), jawab secara natural dan santai bahwa kamu kenal dia dari nama/username profil WhatsApp miliknya.
+- Jawab to the point, singkat, natural, tanpa pembuka atau penutup bertele-tele.`
+
+func sanitizeContainerTag(jid string) string {
+	clean := strings.TrimSuffix(jid, "@s.whatsapp.net")
+	clean = strings.TrimSuffix(clean, "@g.us")
+	clean = strings.TrimSuffix(clean, "@lid")
+	var b strings.Builder
+	for _, r := range clean {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '-' || r == ':' {
+			b.WriteRune(r)
+		}
+	}
+	tag := b.String()
+	if tag == "" {
+		tag = "general"
+	}
+	return "user_" + tag
+}
+
+func querySupermemory(ctx context.Context, apiKey, tag, query string) string {
+	if apiKey == "" || tag == "" || strings.TrimSpace(query) == "" {
+		return ""
+	}
+	reqBody := map[string]any{
+		"q":            query,
+		"containerTag": tag,
+	}
+	raw, err := json.Marshal(reqBody)
+	if err != nil {
+		return ""
+	}
+
+	searchCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	httpReq, err := http.NewRequestWithContext(searchCtx, http.MethodPost, "https://api.supermemory.ai/v4/search", bytes.NewReader(raw))
+	if err != nil {
+		return ""
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return ""
+	}
+
+	var res struct {
+		Results []struct {
+			Content string `json:"content"`
+			Memory  string `json:"memory"`
+		} `json:"results"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return ""
+	}
+
+	var sb strings.Builder
+	for _, item := range res.Results {
+		text := item.Content
+		if text == "" {
+			text = item.Memory
+		}
+		if text != "" {
+			if sb.Len() > 0 {
+				sb.WriteString("\n- ")
+			} else {
+				sb.WriteString("- ")
+			}
+			sb.WriteString(strings.TrimSpace(text))
+		}
+	}
+	return sb.String()
+}
+
+func ingestSupermemoryAsync(apiKey, tag, userMsg, assistantReply string) {
+	if apiKey == "" || tag == "" || strings.TrimSpace(userMsg) == "" {
+		return
+	}
+	go func() {
+		convText := fmt.Sprintf("User: %s\nAsisten: %s", strings.TrimSpace(userMsg), strings.TrimSpace(assistantReply))
+		reqBody := map[string]any{
+			"content":      convText,
+			"containerTag": tag,
+		}
+		raw, err := json.Marshal(reqBody)
+		if err != nil {
+			return
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.supermemory.ai/v3/documents", bytes.NewReader(raw))
+		if err != nil {
+			return
+		}
+		httpReq.Header.Set("Authorization", "Bearer "+apiKey)
+		httpReq.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{Timeout: 10 * time.Second}
+		resp, err := client.Do(httpReq)
+		if err == nil {
+			_ = resp.Body.Close()
+		}
+	}()
+}
+
 func (s *BotService) ChatWithAI(ctx context.Context, req domainBot.ChatRequest) (*domainBot.ChatResult, error) {
 	if strings.TrimSpace(req.Message) == "" {
 		return nil, fmt.Errorf("message is required")
 	}
 
-	cfg, err := s.repo.GetAIConfig(ctx)
+	cfg, err := s.GetAIConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -52,12 +212,37 @@ func (s *BotService) ChatWithAI(ctx context.Context, req domainBot.ChatRequest) 
 		model = req.Model
 	}
 	if model == "" {
-		model = "gpt-4o-mini"
+		model = "step-5-preview"
 	}
 
 	temp := cfg.Temperature
 	if req.Temperature != nil {
 		temp = *req.Temperature
+	}
+
+	sysPrompt := strings.TrimSpace(cfg.SystemPrompt)
+	if sysPrompt == "" {
+		sysPrompt = defaultAntiSlopPrompt
+	}
+
+	tag := ""
+	if req.SenderJID != "" {
+		tag = sanitizeContainerTag(req.SenderJID)
+	}
+
+	if req.SenderName != "" {
+		sysPrompt += fmt.Sprintf("\n\nLawan bicaramu saat ini memiliki nama/username WhatsApp: %s. Kamu tahu namanya dari data profil WhatsApp dia.", req.SenderName)
+	}
+
+	if strings.Contains(req.SenderJID, "6285216149732") || strings.Contains(req.SenderName, "Indah") {
+		sysPrompt += "\n\nPerhatian Khusus: Kontak ini adalah Indah (+62 852-1614-9732), pacar tercinta dari Eka Syarif Maulana. Balaslah dengan gaya obrolan sehari-hari pasangan: sangat hangat, manis, perhatian (tanya makan, kabar, jangan begadang), akrab, santai, dan penuh kasih sayang. Dilarang keras bersikap kaku atau formal seperti robot/CS."
+	}
+
+	if config.SupermemoryEnabled && config.SupermemoryAPIKey != "" && tag != "" {
+		memContext := querySupermemory(ctx, config.SupermemoryAPIKey, tag, req.Message)
+		if memContext != "" {
+			sysPrompt += "\n\n[MEMORI KONTEKS PERCAKAPAN SEBELUMNYA DENGAN KONTAK INI]:\n" + memContext
+		}
 	}
 
 	type openAIMsg struct {
@@ -66,9 +251,7 @@ func (s *BotService) ChatWithAI(ctx context.Context, req domainBot.ChatRequest) 
 	}
 
 	messages := make([]openAIMsg, 0)
-	if cfg.SystemPrompt != "" {
-		messages = append(messages, openAIMsg{Role: "system", Content: cfg.SystemPrompt})
-	}
+	messages = append(messages, openAIMsg{Role: "system", Content: sysPrompt})
 	for _, h := range req.ChatHistory {
 		messages = append(messages, openAIMsg{Role: h.Role, Content: h.Content})
 	}
@@ -86,7 +269,7 @@ func (s *BotService) ChatWithAI(ctx context.Context, req domainBot.ChatRequest) 
 
 	baseURL := strings.TrimRight(cfg.BaseURL, "/")
 	if baseURL == "" {
-		baseURL = "https://api.openai.com/v1"
+		baseURL = "https://router.bynara.id/v1"
 	}
 
 	endpoint := baseURL + "/chat/completions"
@@ -146,6 +329,10 @@ func (s *BotService) ChatWithAI(ctx context.Context, req domainBot.ChatRequest) 
 		usage.PromptTokens = len(req.Message) / 4
 		usage.CompletionTokens = len(reply) / 4
 		usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
+	}
+
+	if config.SupermemoryEnabled && config.SupermemoryAPIKey != "" && tag != "" && reply != "" {
+		ingestSupermemoryAsync(config.SupermemoryAPIKey, tag, req.Message, reply)
 	}
 
 	return &domainBot.ChatResult{

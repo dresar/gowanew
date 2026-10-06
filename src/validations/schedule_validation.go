@@ -46,8 +46,8 @@ func ParseScheduleOptions(options domainSend.ScheduleOptions, now time.Time) (Sc
 	if recurrence == "" {
 		recurrence = "once"
 	}
-	if recurrence != "once" && recurrence != "daily" && recurrence != "weekly" && recurrence != "monthly" {
-		return ScheduleSpec{}, pkgError.ValidationError("recurrence must be once, daily, weekly, or monthly")
+	if recurrence != "once" && recurrence != "hourly" && recurrence != "every_2_hours" && recurrence != "daily" && recurrence != "weekly" && recurrence != "monthly" {
+		return ScheduleSpec{}, pkgError.ValidationError("recurrence must be once, hourly, every_2_hours, daily, weekly, or monthly")
 	}
 	if recurrence == "once" && (len(options.Weekdays) > 0 || options.DayOfMonth != 0) {
 		return ScheduleSpec{}, pkgError.ValidationError("weekly and monthly recurrence fields require a recurring schedule")
@@ -108,6 +108,22 @@ func NextScheduleOccurrence(spec ScheduleSpec, after time.Time) (time.Time, bool
 	startLocal := spec.ScheduledAt.In(spec.Location)
 	var candidate time.Time
 	switch spec.Recurrence {
+	case "hourly":
+		step := time.Hour
+		candidate = spec.ScheduledAt
+		if candidate.Before(after) {
+			diff := after.Sub(candidate)
+			steps := int64(diff/step) + 1
+			candidate = candidate.Add(time.Duration(steps) * step)
+		}
+	case "every_2_hours":
+		step := 2 * time.Hour
+		candidate = spec.ScheduledAt
+		if candidate.Before(after) {
+			diff := after.Sub(candidate)
+			steps := int64(diff/step) + 1
+			candidate = candidate.Add(time.Duration(steps) * step)
+		}
 	case "daily":
 		for offset := 0; offset <= 2; offset++ {
 			candidate = occurrenceOn(local.Year(), local.Month(), local.Day()+offset, startLocal)

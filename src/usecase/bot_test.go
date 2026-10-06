@@ -328,6 +328,40 @@ func TestBotService_RuleMatchingLogic(t *testing.T) {
 
 	m = svc.MatchRule(rules, "   ", false)
 	assert.Nil(t, m)
+
+	pacarRules := []*domainBot.Rule{
+		{
+			ID:              101,
+			TriggerType:     domainBot.TriggerContains,
+			TriggerValue:    "sayang",
+			RecipientJID:    "6285216149732@s.whatsapp.net",
+			Scope:           domainBot.ScopeAll,
+			ResponseType:    domainBot.ResponseTypeText,
+			ResponseContent: "Iya sayangku Indah",
+			IsActive:        true,
+		},
+		{
+			ID:              102,
+			TriggerType:     domainBot.TriggerContains,
+			TriggerValue:    "halo",
+			RecipientJID:    "",
+			Scope:           domainBot.ScopeAll,
+			ResponseType:    domainBot.ResponseTypeText,
+			ResponseContent: "Halo selamat datang",
+			IsActive:        true,
+		},
+	}
+
+	m = svc.MatchRuleForSender(pacarRules, "halo sayang", false, "6285216149732@s.whatsapp.net")
+	require.NotNil(t, m)
+	assert.Equal(t, int64(101), m.ID)
+
+	m = svc.MatchRuleForSender(pacarRules, "sayang", false, "6289999999999@s.whatsapp.net")
+	assert.Nil(t, m)
+
+	m = svc.MatchRuleForSender(pacarRules, "halo", false, "6289999999999@s.whatsapp.net")
+	require.NotNil(t, m)
+	assert.Equal(t, int64(102), m.ID)
 }
 
 func TestBotService_GroupModerationAntiLink(t *testing.T) {
@@ -644,6 +678,40 @@ func TestBotService_HandleMessagePipeline(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, handled)
 
+	evtMenu := &events.Message{
+		Info: types.MessageInfo{
+			ID: "MSG-102",
+			MessageSource: types.MessageSource{
+				IsFromMe: false,
+				Chat:     types.NewJID("customer", types.DefaultUserServer),
+				Sender:   types.NewJID("customer", types.DefaultUserServer),
+			},
+		},
+		Message: &waE2E.Message{
+			Conversation: proto.String("!menu"),
+		},
+	}
+	handled, err = svc.HandleMessage(ctx, evtMenu, nil, nil)
+	require.NoError(t, err)
+	assert.True(t, handled)
+
+	evtPing := &events.Message{
+		Info: types.MessageInfo{
+			ID: "MSG-103",
+			MessageSource: types.MessageSource{
+				IsFromMe: false,
+				Chat:     types.NewJID("customer", types.DefaultUserServer),
+				Sender:   types.NewJID("customer", types.DefaultUserServer),
+			},
+		},
+		Message: &waE2E.Message{
+			Conversation: proto.String("!ping"),
+		},
+	}
+	handled, err = svc.HandleMessage(ctx, evtPing, nil, nil)
+	require.NoError(t, err)
+	assert.True(t, handled)
+
 	antiLinkTrue := true
 	_, err = svc.UpsertGroupRule(ctx, domainBot.UpsertGroupRuleRequest{
 		GroupJID:        "room@g.us",
@@ -671,7 +739,7 @@ func TestBotService_HandleMessagePipeline(t *testing.T) {
 
 	logs, count, err = svc.ListEventLogs(ctx, domainBot.EventLogFilter{})
 	require.NoError(t, err)
-	assert.Equal(t, int64(2), count)
+	assert.Equal(t, int64(4), count)
 	assert.Equal(t, domainBot.EventTypeGroupModeration, logs[0].EventType)
 }
 

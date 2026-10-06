@@ -303,6 +303,44 @@ func initEnvConfig() {
 	if viper.IsSet("chatwoot_message_delete") {
 		config.ChatwootMessageDelete = viper.GetBool("chatwoot_message_delete")
 	}
+
+	// Bot AI & Supermemory environment overrides
+	if envAIProvider := viper.GetString("ai_provider"); envAIProvider != "" {
+		config.BotAIProvider = envAIProvider
+	}
+	if envAIBaseURL := viper.GetString("ai_base_url"); envAIBaseURL != "" {
+		config.BotAIBaseURL = envAIBaseURL
+	}
+	if envAIAPIKey := viper.GetString("ai_api_key"); envAIAPIKey != "" {
+		config.BotAIAPIKey = envAIAPIKey
+	}
+	if envAIModel := viper.GetString("ai_model"); envAIModel != "" {
+		config.BotAIModel = envAIModel
+	}
+	if envAISystemPrompt := viper.GetString("ai_system_prompt"); envAISystemPrompt != "" {
+		config.BotAISystemPrompt = envAISystemPrompt
+	}
+	if viper.IsSet("ai_temperature") {
+		config.BotAITemperature = viper.GetFloat64("ai_temperature")
+	}
+	if viper.IsSet("ai_trigger_prefix") {
+		config.BotAITriggerPrefix = viper.GetString("ai_trigger_prefix")
+	}
+	if viper.IsSet("ai_auto_reply_enabled") {
+		config.BotAIAutoReplyEnabled = viper.GetBool("ai_auto_reply_enabled")
+	}
+	if envAIAllowJIDs := viper.GetString("ai_allow_jids"); envAIAllowJIDs != "" {
+		config.BotAIAllowJIDs = splitCommaTrimmed(envAIAllowJIDs)
+	}
+	if envAIIgnoreJIDs := viper.GetString("ai_ignore_jids"); envAIIgnoreJIDs != "" {
+		config.BotAIIgnoreJIDs = splitCommaTrimmed(envAIIgnoreJIDs)
+	}
+	if envSupermemoryKey := viper.GetString("supermemory_api_key"); envSupermemoryKey != "" {
+		config.SupermemoryAPIKey = envSupermemoryKey
+	}
+	if viper.IsSet("supermemory_enabled") {
+		config.SupermemoryEnabled = viper.GetBool("supermemory_enabled")
+	}
 }
 
 func initFlags() {

@@ -128,6 +128,7 @@ func (r *SQLiteRepository) scanRule(scanner interface{ Scan(...any) error }) (*d
 		&rule.ID,
 		&rule.TriggerType,
 		&rule.TriggerValue,
+		&rule.RecipientJID,
 		&rule.Scope,
 		&rule.ResponseType,
 		&rule.ResponseContent,
@@ -239,14 +240,15 @@ func (r *SQLiteRepository) CreateRule(ctx context.Context, rule *domainBot.Rule)
 
 	query := `
 		INSERT INTO bot_rules (
-			trigger_type, trigger_value, scope, response_type,
+			trigger_type, trigger_value, recipient_jid, scope, response_type,
 			response_content, media_url, is_active, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	res, err := r.db.ExecContext(ctx, query,
 		string(rule.TriggerType),
 		rule.TriggerValue,
+		rule.RecipientJID,
 		string(rule.Scope),
 		string(rule.ResponseType),
 		rule.ResponseContent,
@@ -272,7 +274,7 @@ func (r *SQLiteRepository) GetRuleByID(ctx context.Context, id int64) (*domainBo
 	defer r.mu.RUnlock()
 
 	query := `
-		SELECT id, trigger_type, trigger_value, scope, response_type,
+		SELECT id, trigger_type, trigger_value, recipient_jid, scope, response_type,
 			   response_content, media_url, is_active, created_at, updated_at
 		FROM bot_rules
 		WHERE id = ?
@@ -291,7 +293,7 @@ func (r *SQLiteRepository) ListRules(ctx context.Context, filter domainBot.RuleF
 	defer r.mu.RUnlock()
 
 	query := `
-		SELECT id, trigger_type, trigger_value, scope, response_type,
+		SELECT id, trigger_type, trigger_value, recipient_jid, scope, response_type,
 			   response_content, media_url, is_active, created_at, updated_at
 		FROM bot_rules
 	`
@@ -312,10 +314,19 @@ func (r *SQLiteRepository) ListRules(ctx context.Context, filter domainBot.RuleF
 		args = append(args, string(*filter.Scope))
 	}
 
+	if filter.RecipientJID != nil && *filter.RecipientJID != "" {
+		if *filter.RecipientJID == "global" {
+			conditions = append(conditions, "(recipient_jid = '' OR recipient_jid IS NULL)")
+		} else {
+			conditions = append(conditions, "recipient_jid LIKE ?")
+			args = append(args, "%"+*filter.RecipientJID+"%")
+		}
+	}
+
 	if filter.Search != "" {
-		conditions = append(conditions, "(trigger_value LIKE ? OR response_content LIKE ?)")
+		conditions = append(conditions, "(trigger_value LIKE ? OR response_content LIKE ? OR recipient_jid LIKE ?)")
 		pattern := "%" + filter.Search + "%"
-		args = append(args, pattern, pattern)
+		args = append(args, pattern, pattern, pattern)
 	}
 
 	if len(conditions) > 0 {
@@ -355,7 +366,7 @@ func (r *SQLiteRepository) UpdateRule(ctx context.Context, id int64, req domainB
 	defer r.mu.Unlock()
 
 	existing, err := r.scanRule(r.db.QueryRowContext(ctx, `
-		SELECT id, trigger_type, trigger_value, scope, response_type,
+		SELECT id, trigger_type, trigger_value, recipient_jid, scope, response_type,
 			   response_content, media_url, is_active, created_at, updated_at
 		FROM bot_rules WHERE id = ? LIMIT 1
 	`, id))
@@ -371,6 +382,9 @@ func (r *SQLiteRepository) UpdateRule(ctx context.Context, id int64, req domainB
 	}
 	if req.TriggerValue != nil {
 		existing.TriggerValue = *req.TriggerValue
+	}
+	if req.RecipientJID != nil {
+		existing.RecipientJID = *req.RecipientJID
 	}
 	if req.Scope != nil {
 		existing.Scope = *req.Scope
@@ -396,13 +410,14 @@ func (r *SQLiteRepository) UpdateRule(ctx context.Context, id int64, req domainB
 
 	query := `
 		UPDATE bot_rules
-		SET trigger_type = ?, trigger_value = ?, scope = ?, response_type = ?,
+		SET trigger_type = ?, trigger_value = ?, recipient_jid = ?, scope = ?, response_type = ?,
 			response_content = ?, media_url = ?, is_active = ?, updated_at = ?
 		WHERE id = ?
 	`
 	_, err = r.db.ExecContext(ctx, query,
 		string(existing.TriggerType),
 		existing.TriggerValue,
+		existing.RecipientJID,
 		string(existing.Scope),
 		string(existing.ResponseType),
 		existing.ResponseContent,
