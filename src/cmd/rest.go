@@ -332,6 +332,10 @@ func registerUIRoute(apiGroup fiber.Router, ctx context.Context) {
 		return uiHandler(c)
 	})
 
+	apiGroup.Get("/bot/menu/:id", func(c fiber.Ctx) error {
+		return uiHandler(c)
+	})
+
 	conditionalRoutes := []string{
 		"/chats",
 		"/groups",
