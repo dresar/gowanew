@@ -16,6 +16,7 @@ import (
 	botInfrastructure "github.com/dresar/gowanew/infrastructure/bot"
 	whatsappInfrastructure "github.com/dresar/gowanew/infrastructure/whatsapp"
 	pkgUtils "github.com/dresar/gowanew/pkg/utils"
+	"github.com/dresar/gowanew/usecase/menu"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
@@ -885,16 +886,10 @@ Fitur: Smart Context Memory (100 Pesan) + Supermemory`
 		}
 
 		if lowerText == "!quote" || lowerText == "/quote" {
-			quotes := []string{
-				`"Kesuksesan berawal dari langkah kecil yang konsisten setiap hari."`,
-				`"Hari ini adalah kesempatan terbaik untuk menjadi lebih baik dari kemarin."`,
-				`"Fokus pada proses, hasil terbaik akan mengikuti dengan sendirinya."`,
-				`"Jangan menunggu waktu yang sempurna, mulailah sekarang dan sempurnakan jalannya."`,
-			}
-			pickedQuote := quotes[time.Now().UnixNano()%int64(len(quotes))]
+			quoteReply := menu.FetchRandomQuote()
 			quoteRule := &domainBot.Rule{
 				ResponseType:    domainBot.ResponseTypeText,
-				ResponseContent: "✨ *KATA BIJAK HARI INI:*\n\n" + pickedQuote,
+				ResponseContent: quoteReply,
 			}
 			msgID, dispatchErr := s.DispatchResponse(ctx, client, chatJID, quoteRule)
 			if dispatchErr == nil && chatStorageRepo != nil && client != nil {
@@ -911,7 +906,7 @@ Fitur: Smart Context Memory (100 Pesan) + Supermemory`
 			} else if len(lowerText) > 6 && strings.HasPrefix(lowerText, "/cuaca ") {
 				query = strings.TrimSpace(text[7:])
 			}
-			weatherReply, err := FetchBMKGWeather(ctx, query)
+			weatherReply, err := menu.FetchBMKGWeather(ctx, query)
 			if err != nil {
 				weatherReply = "⚠️ Gagal mengambil data cuaca BMKG saat ini. Silakan coba lagi nanti."
 			}
@@ -930,21 +925,21 @@ Fitur: Smart Context Memory (100 Pesan) + Supermemory`
 		var featureTextReply string
 
 		if lowerText == "!gempa" || lowerText == "/gempa" {
-			reply, err := FetchBMKGEarthquake(ctx)
+			reply, err := menu.FetchBMKGEarthquake(ctx)
 			if err != nil {
 				reply = "⚠️ Gagal mengambil info gempa BMKG saat ini."
 			}
 			featureTextReply = reply
 		} else if strings.HasPrefix(lowerText, "!wiki ") || strings.HasPrefix(lowerText, "/wiki ") {
 			query := strings.TrimSpace(text[6:])
-			reply, err := FetchWikipediaSummary(ctx, query)
+			reply, err := menu.FetchWikipediaSummary(ctx, query)
 			if err != nil {
 				reply = "⚠️ Gagal mengambil data Wikipedia."
 			}
 			featureTextReply = reply
 		} else if strings.HasPrefix(lowerText, "!ip ") || strings.HasPrefix(lowerText, "/ip ") {
 			query := strings.TrimSpace(text[4:])
-			reply, err := FetchIPLookup(ctx, query)
+			reply, err := menu.FetchIPLookup(ctx, query)
 			if err != nil {
 				reply = "⚠️ Gagal mengambil data IP."
 			}
@@ -961,62 +956,75 @@ Fitur: Smart Context Memory (100 Pesan) + Supermemory`
 			if len(parts) >= 3 {
 				to = parts[2]
 			}
-			reply, err := FetchCurrencyExchange(ctx, amt, from, to)
+			reply, err := menu.FetchCurrencyExchange(ctx, amt, from, to)
 			if err != nil {
 				reply = "⚠️ Gagal mengambil kurs mata uang."
 			}
 			featureTextReply = reply
 		} else if strings.HasPrefix(lowerText, "!crypto ") || strings.HasPrefix(lowerText, "/crypto ") {
 			query := strings.TrimSpace(text[8:])
-			reply, err := FetchCryptoPrice(ctx, query)
+			reply, err := menu.FetchCryptoPrice(ctx, query)
 			if err != nil {
 				reply = "⚠️ Gagal mengambil harga aset kripto."
 			}
 			featureTextReply = reply
 		} else if strings.HasPrefix(lowerText, "!sholat ") || strings.HasPrefix(lowerText, "/sholat ") {
 			query := strings.TrimSpace(text[8:])
-			reply, err := FetchPrayerTimes(ctx, query)
+			reply, err := menu.FetchPrayerTimes(ctx, query)
 			if err != nil {
 				reply = "⚠️ Gagal mengambil jadwal sholat."
 			}
 			featureTextReply = reply
 		} else if strings.HasPrefix(lowerText, "!quran ") || strings.HasPrefix(lowerText, "/quran ") {
 			query := strings.TrimSpace(text[7:])
-			reply, err := FetchQuranVerse(ctx, query)
+			reply, err := menu.FetchQuranVerse(ctx, query)
 			if err != nil {
 				reply = "⚠️ Gagal mengambil ayat Al-Qur'an."
 			}
 			featureTextReply = reply
 		} else if strings.HasPrefix(lowerText, "!doa ") || strings.HasPrefix(lowerText, "/doa ") {
 			query := strings.TrimSpace(text[5:])
-			featureTextReply = FetchDailyDua(query)
+			featureTextReply = menu.FetchDailyDua(query)
 		} else if lowerText == "!doa" || lowerText == "/doa" {
-			featureTextReply = FetchDailyDua("")
+			featureTextReply = menu.FetchDailyDua("")
 		} else if strings.HasPrefix(lowerText, "!short ") || strings.HasPrefix(lowerText, "/short ") {
 			query := strings.TrimSpace(text[7:])
-			reply, err := FetchShortLink(ctx, query)
+			reply, err := menu.FetchShortLink(ctx, query)
 			if err != nil {
 				reply = "⚠️ Gagal memendekkan tautan."
 			}
 			featureTextReply = reply
 		} else if lowerText == "!libur" || lowerText == "/libur" {
-			reply, err := FetchNationalHolidays(ctx)
+			reply, err := menu.FetchNationalHolidays(ctx)
 			if err != nil {
 				reply = "⚠️ Gagal mengambil data hari libur nasional."
 			}
 			featureTextReply = reply
 		} else if lowerText == "!pantun" || lowerText == "/pantun" {
-			featureTextReply = FetchRandomPantun()
+			featureTextReply = menu.FetchRandomPantun()
 		} else if lowerText == "!asahotak" || lowerText == "/asahotak" {
-			featureTextReply = FetchRandomBrainTeaser()
+			featureTextReply = menu.FetchRandomBrainTeaser()
 		} else if strings.HasPrefix(lowerText, "!zodiak ") || strings.HasPrefix(lowerText, "/zodiak ") {
 			query := strings.TrimSpace(text[8:])
-			featureTextReply = FetchZodiac(query)
+			featureTextReply = menu.FetchZodiac(query)
 		} else if strings.HasPrefix(lowerText, "!buku ") || strings.HasPrefix(lowerText, "/buku ") {
 			query := strings.TrimSpace(text[6:])
-			reply, err := FetchBookInfo(ctx, query)
+			reply, err := menu.FetchBookInfo(ctx, query)
 			if err != nil {
 				reply = "⚠️ Gagal mencari informasi buku."
+			}
+			featureTextReply = reply
+		} else if strings.HasPrefix(lowerText, "!berita ") || strings.HasPrefix(lowerText, "/berita ") {
+			query := strings.TrimSpace(text[8:])
+			reply, err := menu.FetchNewsHeadlines(ctx, query, "")
+			if err != nil {
+				reply = "⚠️ Gagal mengambil berita terkini."
+			}
+			featureTextReply = reply
+		} else if lowerText == "!berita" || lowerText == "/berita" {
+			reply, err := menu.FetchNewsHeadlines(ctx, "nasional", "")
+			if err != nil {
+				reply = "⚠️ Gagal mengambil berita terkini."
 			}
 			featureTextReply = reply
 		}
