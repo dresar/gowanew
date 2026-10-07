@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -23,27 +24,51 @@ var (
 	tokenSecret     []byte
 )
 
-func getTokenSecret() []byte {
+func getSecretSalt() []byte {
 	tokenSecretOnce.Do(func() {
-		b := make([]byte, 32)
-		if _, err := rand.Read(b); err != nil {
-			tokenSecret = []byte(fmt.Sprintf("%s-%d", config.AppPIN, time.Now().UnixNano()))
-		} else {
-			tokenSecret = b
+		saltFile := "storages/session.key"
+		if data, err := os.ReadFile(saltFile); err == nil && len(data) >= 16 {
+			tokenSecret = data
+			return
 		}
+		b := make([]byte, 32)
+		if _, err := rand.Read(b); err == nil {
+			_ = os.MkdirAll("storages", 0755)
+			_ = os.WriteFile(saltFile, b, 0600)
+			tokenSecret = b
+			return
+		}
+		tokenSecret = []byte("gowa-persistent-session-salt-v1")
 	})
 	return tokenSecret
 }
 
-func ValidatePIN(pin string) bool {
-	pin = strings.TrimSpace(pin)
+func getEffectivePIN() string {
 	expected := strings.TrimSpace(config.AppPIN)
+	if data, err := os.ReadFile("storages/pin.txt"); err == nil {
+		if trimmed := strings.TrimSpace(string(data)); trimmed != "" {
+			expected = trimmed
+		}
+	}
 	if expected == "" {
 		expected = "280219"
 	}
+	return expected
+}
+
+func getTokenSecret() []byte {
+	salt := getSecretSalt()
+	mac := hmac.New(sha256.New, salt)
+	mac.Write([]byte(getEffectivePIN()))
+	return mac.Sum(nil)
+}
+
+func ValidatePIN(pin string) bool {
+	pin = strings.TrimSpace(pin)
 	if pin == "" {
 		return false
 	}
+	expected := getEffectivePIN()
 	return subtle.ConstantTimeCompare([]byte(pin), []byte(expected)) == 1
 }
 
@@ -121,6 +146,9 @@ func IsRequestAuthenticated(c fiber.Ctx) bool {
 			}
 		}
 		if VerifyBasicAuth(authHeader) {
+			return true
+		}
+		if VerifyToken(authHeader) {
 			return true
 		}
 	}

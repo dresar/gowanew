@@ -135,3 +135,32 @@ func TestAuthMiddleware_PublicRoutes(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, fiber.StatusOK, respChatsHtml.StatusCode)
 }
+
+func TestSessionTokenInvalidatedOnPINChange(t *testing.T) {
+	config.AppPIN = "280219"
+	token := GenerateSessionToken()
+	require.NotEmpty(t, token)
+	assert.True(t, VerifyToken(token))
+
+	config.AppPIN = "998877"
+	assert.False(t, VerifyToken(token))
+	assert.True(t, VerifyToken("998877"))
+	assert.False(t, VerifyToken("280219"))
+
+	config.AppPIN = "280219"
+}
+
+func TestDirectAuthHeader(t *testing.T) {
+	config.AppPIN = "280219"
+	app := fiber.New()
+	app.Use(AuthMiddleware())
+	app.Get("/test", func(c fiber.Ctx) error {
+		return c.SendString("ok")
+	})
+
+	reqDirectPin := httptest.NewRequest("GET", "/test", nil)
+	reqDirectPin.Header.Set("Authorization", "280219")
+	respDirectPin, err := app.Test(reqDirectPin)
+	require.NoError(t, err)
+	assert.Equal(t, fiber.StatusOK, respDirectPin.StatusCode)
+}
