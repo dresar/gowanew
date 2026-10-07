@@ -885,8 +885,14 @@ Fitur: Smart Context Memory (100 Pesan) + Supermemory`
 			return true, dispatchErr
 		}
 
-		if lowerText == "!quote" || lowerText == "/quote" {
-			quoteReply := menu.FetchRandomQuote()
+		if lowerText == "!quote" || lowerText == "/quote" || strings.HasPrefix(lowerText, "!quote ") || strings.HasPrefix(lowerText, "/quote ") {
+			qArg := ""
+			if len(lowerText) > 6 && strings.HasPrefix(lowerText, "!quote ") {
+				qArg = strings.TrimSpace(text[7:])
+			} else if len(lowerText) > 6 && strings.HasPrefix(lowerText, "/quote ") {
+				qArg = strings.TrimSpace(text[7:])
+			}
+			quoteReply := menu.FetchRandomQuote(qArg)
 			quoteRule := &domainBot.Rule{
 				ResponseType:    domainBot.ResponseTypeText,
 				ResponseContent: quoteReply,
