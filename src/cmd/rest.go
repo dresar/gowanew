@@ -318,6 +318,8 @@ func registerUIRoute(apiGroup fiber.Router, ctx context.Context) {
 		"/settings",
 		"/misc",
 		"/account",
+		"/integrations",
+		"/webhook",
 		"/bot/auto-replies",
 		"/bot/ai",
 		"/bot/ai/new",
@@ -346,6 +348,7 @@ func registerUIRoute(apiGroup fiber.Router, ctx context.Context) {
 		"/groups",
 		"/messages",
 		"/send",
+		"/mcp",
 	}
 	for _, route := range conditionalRoutes {
 		apiGroup.Get(route, func(c fiber.Ctx) error {
