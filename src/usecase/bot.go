@@ -781,15 +781,36 @@ func (s *BotService) HandleMessage(ctx context.Context, evt *events.Message, cli
 	if matchedRule == nil {
 		lowerText := strings.ToLower(strings.TrimSpace(text))
 		if lowerText == "!menu" || lowerText == "/menu" || lowerText == "!help" {
-			menuText := `*🤖 DAFTAR MENU BOT WHATSAPP*
+			menuText := `*🤖 DAFTAR MENU LENGKAP BOT WHATSAPP*
 
-• *!menu* - Tampilkan daftar perintah bot ini
-• *!ping* - Tes kecepatan respon bot (latensi ms)
-• *!cuaca <desa/kota>* - Prakiraan cuaca resmi BMKG
-• *!ai <pesan>* - Mengobrol santai dengan asisten AI pintar
-• *!quote* - Kutipan motivasi & kata bijak harian
-• *!calc <ekspresi>* - Hitung kalkulasi matematika instan
-• *!info* - Info bot WhatsApp
+*🌟 FITUR UTAMA & AI:*
+• *!menu* - Tampilkan daftar perintah bot
+• *!ping* - Cek latensi & respon bot
+• *!ai <pesan>* - Obrolan pintar asisten AI
+
+*🌤️ INFORMASI & PRODUKTIVITAS:*
+• *!cuaca <wilayah>* - Prakiraan cuaca desa/kota BMKG
+• *!gempa* - Info gempa bumi terkini BMKG
+• *!sholat <kota>* - Jadwal waktu sholat Kemenag
+• *!quran <surah:ayat>* - Ayat & terjemahan Al-Qur'an
+• *!doa <nama_doa>* - Kumpulan doa harian muslim
+• *!wiki <topik>* - Ensiklopedia Wikipedia
+• *!kurs <jumlah> <asal> <tujuan>* - Konversi kurs valas
+• *!crypto <koin>* - Harga aset kripto real-time
+• *!libur* - Jadwal hari libur nasional
+• *!buku <judul>* - Info & sinopsis buku Google
+
+*⚙️ UTILITAS:*
+• *!ip <ip_address>* - Lookup IP geolocation
+• *!short <url>* - Pemendek tautan web
+• *!calc <ekspresi>* - Kalkulator hitung cepat
+• *!info* - Info sistem bot WhatsApp
+
+*🎭 EDUKASI & HIBURAN:*
+• *!quote* - Kata mutiara & motivasi
+• *!pantun* - Pantun nusantara
+• *!asahotak* - Kuis teka-teki asah otak
+• *!zodiak <bintang>* - Ramalan horoskop zodiak
 
 _Ketik perintah di atas untuk menggunakannya ya!_`
 			menuRule := &domainBot.Rule{
@@ -902,6 +923,113 @@ Fitur: Smart Context Memory (100 Pesan) + Supermemory`
 			if dispatchErr == nil && chatStorageRepo != nil && client != nil {
 				senderJID := whatsappInfrastructure.OwnSenderJID(client)
 				_ = chatStorageRepo.StoreSentMessageWithContext(ctx, msgID, senderJID, chatJID.String(), weatherReply, time.Now(), nil)
+			}
+			return true, dispatchErr
+		}
+
+		var featureTextReply string
+
+		if lowerText == "!gempa" || lowerText == "/gempa" {
+			reply, err := FetchBMKGEarthquake(ctx)
+			if err != nil {
+				reply = "⚠️ Gagal mengambil info gempa BMKG saat ini."
+			}
+			featureTextReply = reply
+		} else if strings.HasPrefix(lowerText, "!wiki ") || strings.HasPrefix(lowerText, "/wiki ") {
+			query := strings.TrimSpace(text[6:])
+			reply, err := FetchWikipediaSummary(ctx, query)
+			if err != nil {
+				reply = "⚠️ Gagal mengambil data Wikipedia."
+			}
+			featureTextReply = reply
+		} else if strings.HasPrefix(lowerText, "!ip ") || strings.HasPrefix(lowerText, "/ip ") {
+			query := strings.TrimSpace(text[4:])
+			reply, err := FetchIPLookup(ctx, query)
+			if err != nil {
+				reply = "⚠️ Gagal mengambil data IP."
+			}
+			featureTextReply = reply
+		} else if strings.HasPrefix(lowerText, "!kurs ") || strings.HasPrefix(lowerText, "/kurs ") {
+			parts := strings.Fields(text[6:])
+			amt, from, to := "1", "USD", "IDR"
+			if len(parts) >= 1 {
+				amt = parts[0]
+			}
+			if len(parts) >= 2 {
+				from = parts[1]
+			}
+			if len(parts) >= 3 {
+				to = parts[2]
+			}
+			reply, err := FetchCurrencyExchange(ctx, amt, from, to)
+			if err != nil {
+				reply = "⚠️ Gagal mengambil kurs mata uang."
+			}
+			featureTextReply = reply
+		} else if strings.HasPrefix(lowerText, "!crypto ") || strings.HasPrefix(lowerText, "/crypto ") {
+			query := strings.TrimSpace(text[8:])
+			reply, err := FetchCryptoPrice(ctx, query)
+			if err != nil {
+				reply = "⚠️ Gagal mengambil harga aset kripto."
+			}
+			featureTextReply = reply
+		} else if strings.HasPrefix(lowerText, "!sholat ") || strings.HasPrefix(lowerText, "/sholat ") {
+			query := strings.TrimSpace(text[8:])
+			reply, err := FetchPrayerTimes(ctx, query)
+			if err != nil {
+				reply = "⚠️ Gagal mengambil jadwal sholat."
+			}
+			featureTextReply = reply
+		} else if strings.HasPrefix(lowerText, "!quran ") || strings.HasPrefix(lowerText, "/quran ") {
+			query := strings.TrimSpace(text[7:])
+			reply, err := FetchQuranVerse(ctx, query)
+			if err != nil {
+				reply = "⚠️ Gagal mengambil ayat Al-Qur'an."
+			}
+			featureTextReply = reply
+		} else if strings.HasPrefix(lowerText, "!doa ") || strings.HasPrefix(lowerText, "/doa ") {
+			query := strings.TrimSpace(text[5:])
+			featureTextReply = FetchDailyDua(query)
+		} else if lowerText == "!doa" || lowerText == "/doa" {
+			featureTextReply = FetchDailyDua("")
+		} else if strings.HasPrefix(lowerText, "!short ") || strings.HasPrefix(lowerText, "/short ") {
+			query := strings.TrimSpace(text[7:])
+			reply, err := FetchShortLink(ctx, query)
+			if err != nil {
+				reply = "⚠️ Gagal memendekkan tautan."
+			}
+			featureTextReply = reply
+		} else if lowerText == "!libur" || lowerText == "/libur" {
+			reply, err := FetchNationalHolidays(ctx)
+			if err != nil {
+				reply = "⚠️ Gagal mengambil data hari libur nasional."
+			}
+			featureTextReply = reply
+		} else if lowerText == "!pantun" || lowerText == "/pantun" {
+			featureTextReply = FetchRandomPantun()
+		} else if lowerText == "!asahotak" || lowerText == "/asahotak" {
+			featureTextReply = FetchRandomBrainTeaser()
+		} else if strings.HasPrefix(lowerText, "!zodiak ") || strings.HasPrefix(lowerText, "/zodiak ") {
+			query := strings.TrimSpace(text[8:])
+			featureTextReply = FetchZodiac(query)
+		} else if strings.HasPrefix(lowerText, "!buku ") || strings.HasPrefix(lowerText, "/buku ") {
+			query := strings.TrimSpace(text[6:])
+			reply, err := FetchBookInfo(ctx, query)
+			if err != nil {
+				reply = "⚠️ Gagal mencari informasi buku."
+			}
+			featureTextReply = reply
+		}
+
+		if featureTextReply != "" {
+			ftRule := &domainBot.Rule{
+				ResponseType:    domainBot.ResponseTypeText,
+				ResponseContent: featureTextReply,
+			}
+			msgID, dispatchErr := s.DispatchResponse(ctx, client, chatJID, ftRule)
+			if dispatchErr == nil && chatStorageRepo != nil && client != nil {
+				senderJID := whatsappInfrastructure.OwnSenderJID(client)
+				_ = chatStorageRepo.StoreSentMessageWithContext(ctx, msgID, senderJID, chatJID.String(), featureTextReply, time.Now(), nil)
 			}
 			return true, dispatchErr
 		}
