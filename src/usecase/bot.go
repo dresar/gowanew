@@ -808,9 +808,11 @@ func (s *BotService) HandleMessage(ctx context.Context, evt *events.Message, cli
 • *!info* - Info sistem bot WhatsApp
 
 *🎭 EDUKASI & HIBURAN:*
-• *!quote* - Kata mutiara & motivasi
-• *!pantun* - Pantun nusantara
-• *!asahotak* - Kuis teka-teki asah otak
+• *!quote <topik>* - Kata mutiara & motivasi
+• *!fakta <topik>* - Fakta unik sains & dunia
+• *!resep <makanan>* - Resep masakan nusantara
+• *!pantun <kategori>* - Pantun nusantara
+• *!asahotak <kategori>* - Kuis teka-teki asah otak
 • *!zodiak <bintang>* - Ramalan horoskop zodiak
 
 _Ketik perintah di atas untuk menggunakannya ya!_`
@@ -1006,10 +1008,40 @@ Fitur: Smart Context Memory (100 Pesan) + Supermemory`
 				reply = "⚠️ Gagal mengambil data hari libur nasional."
 			}
 			featureTextReply = reply
-		} else if lowerText == "!pantun" || lowerText == "/pantun" {
-			featureTextReply = menu.FetchRandomPantun()
-		} else if lowerText == "!asahotak" || lowerText == "/asahotak" {
-			featureTextReply = menu.FetchRandomBrainTeaser()
+		} else if lowerText == "!fakta" || lowerText == "/fakta" || lowerText == "!tahukahkamu" || strings.HasPrefix(lowerText, "!fakta ") || strings.HasPrefix(lowerText, "/fakta ") {
+			qArg := ""
+			if len(lowerText) > 6 && strings.HasPrefix(lowerText, "!fakta ") {
+				qArg = strings.TrimSpace(text[7:])
+			} else if len(lowerText) > 6 && strings.HasPrefix(lowerText, "/fakta ") {
+				qArg = strings.TrimSpace(text[7:])
+			}
+			featureTextReply = menu.FetchRandomFact(ctx, qArg)
+		} else if strings.HasPrefix(lowerText, "!resep ") || strings.HasPrefix(lowerText, "/resep ") || lowerText == "!resep" || lowerText == "/resep" || strings.HasPrefix(lowerText, "!masak ") {
+			qArg := ""
+			if len(lowerText) > 6 && strings.HasPrefix(lowerText, "!resep ") {
+				qArg = strings.TrimSpace(text[7:])
+			} else if len(lowerText) > 6 && strings.HasPrefix(lowerText, "/resep ") {
+				qArg = strings.TrimSpace(text[7:])
+			} else if len(lowerText) > 6 && strings.HasPrefix(lowerText, "!masak ") {
+				qArg = strings.TrimSpace(text[7:])
+			}
+			featureTextReply = menu.FetchRecipe(qArg)
+		} else if lowerText == "!pantun" || lowerText == "/pantun" || strings.HasPrefix(lowerText, "!pantun ") || strings.HasPrefix(lowerText, "/pantun ") {
+			qArg := ""
+			if len(lowerText) > 7 && strings.HasPrefix(lowerText, "!pantun ") {
+				qArg = strings.TrimSpace(text[8:])
+			} else if len(lowerText) > 7 && strings.HasPrefix(lowerText, "/pantun ") {
+				qArg = strings.TrimSpace(text[8:])
+			}
+			featureTextReply = menu.FetchRandomPantun(qArg)
+		} else if lowerText == "!asahotak" || lowerText == "/asahotak" || lowerText == "!tebak" || strings.HasPrefix(lowerText, "!asahotak ") || strings.HasPrefix(lowerText, "/asahotak ") {
+			qArg := ""
+			if len(lowerText) > 9 && strings.HasPrefix(lowerText, "!asahotak ") {
+				qArg = strings.TrimSpace(text[10:])
+			} else if len(lowerText) > 9 && strings.HasPrefix(lowerText, "/asahotak ") {
+				qArg = strings.TrimSpace(text[10:])
+			}
+			featureTextReply = menu.FetchRandomBrainTeaser(qArg)
 		} else if strings.HasPrefix(lowerText, "!zodiak ") || strings.HasPrefix(lowerText, "/zodiak ") {
 			query := strings.TrimSpace(text[8:])
 			featureTextReply = menu.FetchZodiac(query)

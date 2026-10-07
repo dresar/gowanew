@@ -7,14 +7,51 @@ import (
 )
 
 func TestMenuFeatures(t *testing.T) {
+	ctx := context.Background()
+
+	fact := FetchRandomFact(ctx)
+	if !strings.Contains(fact, "TAHUKAH KAMU") {
+		t.Fatalf("expected fact header, got: %s", fact)
+	}
+
+	factScience := FetchRandomFact(ctx, "sains")
+	if !strings.Contains(factScience, "TAHUKAH KAMU") {
+		t.Fatalf("expected filtered fact, got: %s", factScience)
+	}
+
+	factAnimal := FetchRandomFact(ctx, "hewan")
+	if !strings.Contains(factAnimal, "TAHUKAH KAMU") {
+		t.Fatalf("expected animal fact, got: %s", factAnimal)
+	}
+
 	pantun := FetchRandomPantun()
 	if !strings.Contains(pantun, "PANTUN NUSANTARA") {
 		t.Fatalf("expected pantun header, got: %s", pantun)
 	}
 
+	pantunJenaka := FetchRandomPantun("jenaka")
+	if !strings.Contains(pantunJenaka, "JENAKA") {
+		t.Fatalf("expected jenaka pantun, got: %s", pantunJenaka)
+	}
+
 	bt := FetchRandomBrainTeaser()
 	if !strings.Contains(bt, "ASAH OTAK") {
 		t.Fatalf("expected brain teaser header, got: %s", bt)
+	}
+
+	btLogic := FetchRandomBrainTeaser("logika")
+	if !strings.Contains(btLogic, "LOGIKA") {
+		t.Fatalf("expected logic brain teaser, got: %s", btLogic)
+	}
+
+	dua := FetchDailyDua("makan")
+	if !strings.Contains(dua, "MAKAN") {
+		t.Fatalf("expected makan dua, got: %s", dua)
+	}
+
+	recipe := FetchRecipe("rendang")
+	if !strings.Contains(recipe, "RENDANG") {
+		t.Fatalf("expected rendang recipe, got: %s", recipe)
 	}
 
 	zodiac := FetchZodiac("aries")
@@ -37,7 +74,6 @@ func TestMenuFeatures(t *testing.T) {
 		t.Fatalf("expected 30, got: %s, err: %v", calc, err)
 	}
 
-	ctx := context.Background()
 	testLocations := []string{"Jakarta", "Medan", "Torganda", "Bagan Baru", "Rokan Hulu"}
 	for _, loc := range testLocations {
 		code, _ := ResolveBMKGAdm4(ctx, loc)
