@@ -23,15 +23,15 @@ func InitRestAuth(app fiber.Router) {
 
 func (h *AuthHandler) Login(c fiber.Ctx) error {
 	var req LoginRequest
-	if err := c.Bind().Body(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
-			Status:  fiber.StatusBadRequest,
-			Code:    "INVALID_REQUEST",
-			Message: "Format permintaan tidak valid",
-		})
+	_ = c.Bind().Body(&req)
+	pin := strings.TrimSpace(req.PIN)
+	if pin == "" {
+		pin = strings.TrimSpace(c.FormValue("pin"))
+	}
+	if pin == "" {
+		pin = strings.TrimSpace(c.Query("pin"))
 	}
 
-	pin := strings.TrimSpace(req.PIN)
 	if !middleware.ValidatePIN(pin) {
 		return c.Status(fiber.StatusUnauthorized).JSON(utils.ResponseData{
 			Status:  fiber.StatusUnauthorized,
