@@ -119,24 +119,17 @@ func restServer(_ *cobra.Command, _ []string) {
 		}()
 	}
 
-	if len(config.AppBasicAuthCredential) > 0 {
-		account := make(map[string]string)
-		for _, basicAuth := range config.AppBasicAuthCredential {
-			ba := strings.Split(basicAuth, ":")
-			if len(ba) != 2 {
-				logrus.Fatalln("Basic auth is not valid, please this following format <user>:<secret>")
-			}
-			account[ba[0]] = ba[1]
-		}
+	app.Use(middleware.WebsocketQueryAuth())
+	app.Use(middleware.AuthMiddleware())
 
-		app.Use(middleware.WebsocketQueryAuth())
-		app.Use(newBasicAuthMiddleware(account))
-	}
-
-	// Create base path group or use app directly
 	var apiGroup fiber.Router = app
 	if config.AppBasePath != "" {
 		apiGroup = app.Group(config.AppBasePath)
+	}
+
+	rest.InitRestAuth(apiGroup)
+	if config.AppBasePath != "" {
+		rest.InitRestAuth(app)
 	}
 
 	registerDeviceScopedRoutes := func(r fiber.Router) {
@@ -312,6 +305,7 @@ func registerUIRoute(apiGroup fiber.Router, ctx context.Context) {
 		"/",
 		"/app",
 		"/connect",
+		"/login",
 		"/dashboard",
 		"/messaging",
 		"/scheduled",

@@ -3,6 +3,7 @@ import readline from 'node:readline';
 const mcpUrl = process.env.GOWA_MCP_URL || 'http://localhost:3000/mcp';
 const deviceId = process.env.GOWA_DEVICE_ID || '';
 const basicAuth = process.env.GOWA_BASIC_AUTH || '';
+const mcpPin = process.env.GOWA_MCP_PIN || process.env.GOWA_PIN || process.env.APP_PIN || '280219';
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -32,6 +33,8 @@ async function sendRPC(line) {
 
   if (basicAuth) {
     headers['Authorization'] = `Basic ${Buffer.from(basicAuth).toString('base64')}`;
+  } else if (mcpPin) {
+    headers['Authorization'] = `Bearer ${mcpPin}`;
   }
 
   try {

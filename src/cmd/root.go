@@ -98,6 +98,18 @@ func initEnvConfig() {
 		credential := strings.Split(envBasicAuth, ",")
 		config.AppBasicAuthCredential = credential
 	}
+	if envPIN := viper.GetString("app_pin"); envPIN != "" {
+		config.AppPIN = envPIN
+	} else if envPIN := viper.GetString("gowa_pin"); envPIN != "" {
+		config.AppPIN = envPIN
+	} else if envPIN := viper.GetString("pin"); envPIN != "" {
+		config.AppPIN = envPIN
+	}
+	if data, err := os.ReadFile("storages/pin.txt"); err == nil {
+		if trimmed := strings.TrimSpace(string(data)); trimmed != "" {
+			config.AppPIN = trimmed
+		}
+	}
 	if envBasePath := viper.GetString("app_base_path"); envBasePath != "" {
 		config.AppBasePath = envBasePath
 	}
@@ -376,6 +388,12 @@ func initFlags() {
 		"basic-auth", "b",
 		config.AppBasicAuthCredential,
 		"basic auth credential | -b=yourUsername:yourPassword",
+	)
+	rootCmd.PersistentFlags().StringVar(
+		&config.AppPIN,
+		"pin",
+		config.AppPIN,
+		"access PIN for Web UI, API, and MCP",
 	)
 	rootCmd.PersistentFlags().StringVarP(
 		&config.AppBasePath,
