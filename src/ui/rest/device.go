@@ -1,7 +1,16 @@
 package rest
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"crypto/tls"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"time"
 
 	"github.com/dresar/gowanew/config"
 	"github.com/dresar/gowanew/domains/chatstorage"
@@ -30,6 +39,8 @@ func InitRestDevice(app fiber.Router, service device.IDeviceUsecase) Device {
 	app.Get("/devices/:device_id/status", rest.Status)
 	app.Patch("/devices/:device_id/webhook", rest.UpdateDeviceWebhook)
 	app.Get("/devices/:device_id/webhook", rest.GetDeviceWebhook)
+	app.Post("/devices/:device_id/webhook/test", rest.TestDeviceWebhook)
+	app.Post("/webhook/test", rest.TestDeviceWebhook)
 
 	return rest
 }
@@ -290,5 +301,155 @@ func (handler *Device) GetDeviceWebhook(c fiber.Ctx) error {
 				return false
 			}(),
 		},
+	})
+}
+
+func (handler *Device) TestDeviceWebhook(c fiber.Ctx) error {
+	var req struct {
+		WebhookURL                string `json:"webhook_url"`
+		WebhookSecret             string `json:"webhook_secret"`
+		WebhookEvent              string `json:"webhook_event"`
+		WebhookInsecureSkipVerify bool   `json:"webhook_insecure_skip_verify"`
+	}
+
+	if err := c.Bind().Body(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
+			Status:  400,
+			Code:    "BAD_REQUEST",
+			Message: "Invalid request body",
+			Results: nil,
+		})
+	}
+
+	targetURL := strings.TrimSpace(req.WebhookURL)
+	deviceID := pathDeviceID(c)
+	if deviceID == "" {
+		deviceID = "default"
+	}
+
+	if targetURL == "" {
+		cfg, _ := handler.Service.GetDeviceWebhookConfig(c.Context(), deviceID)
+		if cfg != nil && cfg.WebhookURL != nil {
+			targetURL = *cfg.WebhookURL
+			if req.WebhookSecret == "" {
+				req.WebhookSecret = cfg.WebhookSecret
+			}
+			if !req.WebhookInsecureSkipVerify {
+				req.WebhookInsecureSkipVerify = cfg.WebhookInsecureSkipVerify
+			}
+		}
+	}
+
+	if targetURL == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
+			Status:  400,
+			Code:    "BAD_REQUEST",
+			Message: "webhook_url is required",
+			Results: nil,
+		})
+	}
+
+	eventType := strings.TrimSpace(req.WebhookEvent)
+	if eventType == "" {
+		eventType = "message"
+	}
+
+	samplePayload := map[string]any{
+		"event":     eventType,
+		"timestamp": time.Now().Unix(),
+		"device_id": deviceID,
+		"test":      true,
+		"payload": map[string]any{
+			"message_id": "TEST_3EB0A1B2C3D4E5F6",
+			"sender_jid": "6281234567890@s.whatsapp.net",
+			"chat_jid":   "6281234567890@s.whatsapp.net",
+			"from_me":    false,
+			"text":       "Halo! Ini adalah pengujian webhook real-time dari GoWA Engine.",
+			"type":       "text",
+		},
+	}
+
+	payloadBytes, err := json.Marshal(samplePayload)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(utils.ResponseData{
+			Status:  500,
+			Code:    "INTERNAL_SERVER_ERROR",
+			Message: "Failed to serialize payload",
+			Results: nil,
+		})
+	}
+
+	httpReq, err := http.NewRequestWithContext(c.Context(), http.MethodPost, targetURL, strings.NewReader(string(payloadBytes)))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
+			Status:  400,
+			Code:    "INVALID_URL",
+			Message: fmt.Sprintf("Invalid webhook URL: %v", err),
+			Results: nil,
+		})
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("User-Agent", "GoWA-Webhook-Tester/1.0")
+	httpReq.Header.Set("X-GoWA-Event", eventType)
+	httpReq.Header.Set("X-GoWA-Delivery", fmt.Sprintf("del-%d", time.Now().UnixNano()))
+
+	if req.WebhookSecret != "" {
+		mac := hmac.New(sha256.New, []byte(req.WebhookSecret))
+		mac.Write(payloadBytes)
+		signature := hex.EncodeToString(mac.Sum(nil))
+		httpReq.Header.Set("X-Hub-Signature-256", fmt.Sprintf("sha256=%s", signature))
+		httpReq.Header.Set("X-GoWA-Signature", signature)
+	}
+
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: req.WebhookInsecureSkipVerify,
+		},
+	}
+	httpClient := &http.Client{
+		Transport: transport,
+		Timeout:   10 * time.Second,
+	}
+
+	start := time.Now()
+	resp, reqErr := httpClient.Do(httpReq)
+	latency := time.Since(start).Milliseconds()
+
+	resultMap := map[string]any{
+		"url":          targetURL,
+		"event":        eventType,
+		"latency_ms":   latency,
+		"sent_payload": samplePayload,
+	}
+
+	if reqErr != nil {
+		resultMap["status_code"] = 0
+		resultMap["success"] = false
+		resultMap["error"] = reqErr.Error()
+		resultMap["response_body"] = ""
+		return c.JSON(utils.ResponseData{
+			Status:  200,
+			Code:    "WEBHOOK_TEST_FAILED",
+			Message: fmt.Sprintf("Delivery failed: %v", reqErr),
+			Results: resultMap,
+		})
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+	respBody := string(bodyBytes)
+
+	resultMap["status_code"] = resp.StatusCode
+	resultMap["success"] = resp.StatusCode >= 200 && resp.StatusCode < 300
+	resultMap["response_body"] = respBody
+	resultMap["error"] = ""
+
+	msg := fmt.Sprintf("Webhook delivered with HTTP %d in %dms", resp.StatusCode, latency)
+	return c.JSON(utils.ResponseData{
+		Status:  200,
+		Code:    "SUCCESS",
+		Message: msg,
+		Results: resultMap,
 	})
 }

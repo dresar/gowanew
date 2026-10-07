@@ -113,6 +113,8 @@ func registerMcpOAuth(app *fiber.App, dm *whatsapp.DeviceManager) (*mcpoauth.Ser
 		User:     userUsecase,
 		Message:  messageUsecase,
 		Group:    groupUsecase,
+		Bot:      botUsecase,
+		Device:   deviceUsecase,
 	})
 
 	return oauthServer, true, nil

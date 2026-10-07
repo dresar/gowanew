@@ -4,15 +4,15 @@ import (
 	"github.com/dresar/gowanew/config"
 	domainApp "github.com/dresar/gowanew/domains/app"
 	domainChat "github.com/dresar/gowanew/domains/chat"
+	domainDevice "github.com/dresar/gowanew/domains/device"
 	domainGroup "github.com/dresar/gowanew/domains/group"
 	domainMessage "github.com/dresar/gowanew/domains/message"
 	domainSend "github.com/dresar/gowanew/domains/send"
 	domainUser "github.com/dresar/gowanew/domains/user"
+	"github.com/dresar/gowanew/usecase"
 	"github.com/mark3labs/mcp-go/server"
 )
 
-// Deps carries the usecase instances the MCP tools call â€” the same instances
-// the REST handlers hold, so both surfaces share one whatsmeow session.
 type Deps struct {
 	App      domainApp.IAppUsecase
 	Send     domainSend.ISendUsecase
@@ -21,17 +21,15 @@ type Deps struct {
 	User     domainUser.IUserUsecase
 	Message  domainMessage.IMessageUsecase
 	Group    domainGroup.IGroupUsecase
+	Bot      usecase.IBotUsecase
+	Device   domainDevice.IDeviceUsecase
 }
 
-// NewServer builds the MCPServer with the 6 consolidated tools registered.
 func NewServer(deps Deps, resolver deviceResolver) *server.MCPServer {
 	s := server.NewMCPServer(
 		"WhatsApp Web Multidevice MCP Server",
 		config.AppVersion,
 		server.WithToolCapabilities(true),
-		// Enforce the schemas' allOf/if/then conditionals at the mcp-go
-		// layer, before any handler runs (SEP-1303). Without this,
-		// inputValidator stays nil and the conditionals are advisory only.
 		server.WithInputSchemaValidation(),
 	)
 	InitMcpSend(deps.Send, resolver).AddSendTools(s)
@@ -40,5 +38,7 @@ func NewServer(deps Deps, resolver deviceResolver) *server.MCPServer {
 	InitMcpChat(deps.Chat, deps.User, resolver).AddChatTools(s)
 	InitMcpGroup(deps.Group, resolver).AddGroupTools(s)
 	InitMcpApp(deps.App, resolver).AddAppTools(s)
+	InitMcpBot(deps.Bot, resolver).AddBotTools(s)
+	InitMcpWebhook(deps.Device, resolver).AddWebhookTools(s)
 	return s
 }

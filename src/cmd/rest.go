@@ -161,6 +161,9 @@ func restServer(_ *cobra.Command, _ []string) {
 	// MCP endpoint â€” same usecase instances as REST, so both surfaces share
 	// one whatsmeow session. With OAuth disabled it keeps the existing global
 	// Basic Auth behavior; OAuth-enabled MCP was already mounted above.
+	if botUsecase == nil {
+		botUsecase = usecase.GetGlobalBotService()
+	}
 	if config.McpEnabled && !mcpOAuthRegistered {
 		uimcp.Register(apiGroup, dm, uimcp.Deps{
 			App:      appUsecase,
@@ -170,6 +173,8 @@ func restServer(_ *cobra.Command, _ []string) {
 			User:     userUsecase,
 			Message:  messageUsecase,
 			Group:    groupUsecase,
+			Bot:      botUsecase,
+			Device:   deviceUsecase,
 		})
 	}
 
