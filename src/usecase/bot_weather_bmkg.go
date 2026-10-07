@@ -6,86 +6,101 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 )
 
 var bmkgAdm4Pattern = regexp.MustCompile(`^\d{2}\.\d{2}\.\d{2}\.\d{4}$`)
 
+var adm4Cache sync.Map
+
 var bmkgCityDirectory = map[string]string{
-	"jakarta":           "31.71.01.1001",
-	"jakarta pusat":     "31.71.01.1001",
-	"gambir":            "31.71.01.1001",
-	"kemayoran":         "31.71.03.1001",
-	"jakarta selatan":   "31.74.04.1001",
-	"kebayoran":         "31.74.04.1001",
-	"jakarta barat":     "31.73.02.1001",
-	"jakarta timur":     "31.75.03.1001",
-	"jakarta utara":     "31.72.02.1001",
-	"bandung":           "32.73.01.1001",
-	"bogor":             "32.71.01.1001",
-	"depok":             "32.76.01.1001",
-	"bekasi":            "32.75.01.1001",
-	"tangerang":         "36.71.01.1001",
-	"tangsel":           "36.74.01.1001",
-	"tangerang selatan": "36.74.01.1001",
-	"cirebon":           "32.74.01.1001",
-	"sukabumi":          "32.72.01.1001",
-	"tasikmalaya":       "32.78.01.1001",
-	"semarang":          "33.74.01.1001",
-	"solo":              "33.72.01.1001",
-	"surakarta":         "33.72.01.1001",
-	"magelang":          "33.71.01.1001",
-	"pekalongan":        "33.75.01.1001",
-	"tegal":             "33.76.01.1001",
-	"yogyakarta":        "34.71.01.1001",
-	"jogja":             "34.71.01.1001",
-	"surabaya":          "35.78.01.1001",
-	"malang":            "35.73.01.1001",
-	"kediri":            "35.71.01.1001",
-	"blitar":            "35.72.01.1001",
-	"madiun":            "35.77.01.1001",
-	"probolinggo":       "35.74.01.1001",
-	"pasuruan":          "35.75.01.1001",
-	"denpasar":          "51.71.01.1001",
-	"bali":              "51.71.01.1001",
-	"mataram":           "52.71.01.1001",
-	"lombok":            "52.71.01.1001",
-	"kupang":            "53.71.01.1001",
-	"banda aceh":        "11.71.01.1001",
-	"aceh":              "11.71.01.1001",
-	"medan":             "12.71.01.1001",
-	"padang":            "13.71.01.1001",
-	"pekanbaru":         "14.71.01.1001",
-	"riau":              "14.71.01.1001",
-	"batam":             "21.71.01.1001",
-	"tanjung pinang":    "21.72.01.1001",
-	"jambi":             "15.71.01.1001",
-	"palembang":         "16.71.01.1001",
-	"bengkulu":          "17.71.01.1001",
-	"bandar lampung":    "18.71.01.1001",
-	"lampung":           "18.71.01.1001",
-	"pangkal pinang":    "19.71.01.1001",
-	"pontianak":         "61.71.01.1001",
-	"banjarmasin":       "63.71.01.1001",
-	"banjarbaru":        "63.72.01.1001",
-	"samarinda":         "64.71.01.1001",
-	"balikpapan":        "64.71.02.1001",
-	"palangkaraya":      "62.71.01.1001",
-	"tarakan":           "65.71.01.1001",
-	"manado":            "71.71.01.1001",
-	"palu":              "72.71.01.1001",
-	"makassar":          "73.71.01.1001",
-	"kendari":           "74.71.01.1001",
-	"gorontalo":         "75.71.01.1001",
-	"mamuju":            "76.02.01.1001",
-	"ambon":             "81.71.01.1001",
-	"ternate":           "82.71.01.1001",
-	"jayapura":          "91.71.01.1001",
-	"sorong":            "92.71.01.1001",
-	"manokwari":         "92.02.01.1001",
-	"merauke":           "93.01.01.1001",
+	"torganda":             "12.22.03.2011",
+	"desa torganda":        "12.22.03.2011",
+	"torgamba":             "12.22.03.2009",
+	"kecamatan torgamba":   "12.22.03.2009",
+	"bagan baru":           "12.19.12.2011",
+	"desa bagan baru":      "12.19.12.2011",
+	"rokan hulu":           "14.06.14.2001",
+	"kabupaten rokan hulu": "14.06.14.2001",
+	"pasir pengaraian":     "14.06.03.1001",
+	"pasir pengarayan":     "14.06.03.1001",
+	"rambah":               "14.06.03.1001",
+	"jakarta":              "31.71.01.1001",
+	"jakarta pusat":        "31.71.01.1001",
+	"gambir":               "31.71.01.1001",
+	"kemayoran":            "31.71.03.1001",
+	"jakarta selatan":      "31.74.04.1001",
+	"kebayoran":            "31.74.04.1001",
+	"jakarta barat":        "31.73.02.1001",
+	"jakarta timur":        "31.75.03.1001",
+	"jakarta utara":        "31.72.02.1001",
+	"bandung":              "32.73.01.1001",
+	"bogor":                "32.71.01.1001",
+	"depok":                "32.76.01.1001",
+	"bekasi":               "32.75.01.1001",
+	"tangerang":            "36.71.01.1001",
+	"tangsel":              "36.74.01.1001",
+	"tangerang selatan":    "36.74.01.1001",
+	"cirebon":              "32.74.01.1001",
+	"sukabumi":             "32.72.01.1001",
+	"tasikmalaya":          "32.78.01.1001",
+	"semarang":             "33.74.01.1001",
+	"solo":                 "33.72.01.1001",
+	"surakarta":            "33.72.01.1001",
+	"magelang":             "33.71.01.1001",
+	"pekalongan":           "33.75.01.1001",
+	"tegal":                "33.76.01.1001",
+	"yogyakarta":           "34.71.01.1001",
+	"jogja":                "34.71.01.1001",
+	"surabaya":             "35.78.01.1001",
+	"malang":               "35.73.01.1001",
+	"kediri":               "35.71.01.1001",
+	"blitar":               "35.72.01.1001",
+	"madiun":               "35.77.01.1001",
+	"probolinggo":          "35.74.01.1001",
+	"pasuruan":             "35.75.01.1001",
+	"denpasar":             "51.71.01.1001",
+	"bali":                 "51.71.01.1001",
+	"mataram":              "52.71.01.1001",
+	"lombok":               "52.71.01.1001",
+	"kupang":               "53.71.01.1001",
+	"banda aceh":           "11.71.01.1001",
+	"aceh":                 "11.71.01.1001",
+	"medan":                "12.71.01.1001",
+	"padang":               "13.71.01.1001",
+	"pekanbaru":            "14.71.01.1001",
+	"riau":                 "14.71.01.1001",
+	"batam":                "21.71.01.1001",
+	"tanjung pinang":       "21.72.01.1001",
+	"jambi":                "15.71.01.1001",
+	"palembang":            "16.71.01.1001",
+	"bengkulu":             "17.71.01.1001",
+	"bandar lampung":       "18.71.01.1001",
+	"lampung":              "18.71.01.1001",
+	"pangkal pinang":       "19.71.01.1001",
+	"pontianak":            "61.71.01.1001",
+	"banjarmasin":          "63.71.01.1001",
+	"banjarbaru":           "63.72.01.1001",
+	"samarinda":            "64.71.01.1001",
+	"balikpapan":           "64.71.02.1001",
+	"palangkaraya":         "62.71.01.1001",
+	"tarakan":              "65.71.01.1001",
+	"manado":               "71.71.01.1001",
+	"palu":                 "72.71.01.1001",
+	"makassar":             "73.71.01.1001",
+	"kendari":              "74.71.01.1001",
+	"gorontalo":            "75.71.01.1001",
+	"mamuju":               "76.02.01.1001",
+	"ambon":                "81.71.01.1001",
+	"ternate":              "82.71.01.1001",
+	"jayapura":             "91.71.01.1001",
+	"sorong":               "92.71.01.1001",
+	"manokwari":            "92.02.01.1001",
+	"merauke":              "93.01.01.1001",
 }
 
 type bmkgLocation struct {
@@ -120,7 +135,83 @@ type bmkgApiResponse struct {
 	} `json:"data"`
 }
 
-func ResolveBMKGAdm4(query string) (string, string) {
+type cariKodePosResponse struct {
+	Success bool `json:"success"`
+	Data    []struct {
+		ID          string `json:"id"`
+		Type        string `json:"type"`
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		Name        string `json:"name"`
+		Code        string `json:"code"`
+		District    *struct {
+			ID   string `json:"id"`
+			Name string `json:"name"`
+		} `json:"district"`
+		Village *struct {
+			ID   string `json:"id"`
+			Name string `json:"name"`
+		} `json:"village"`
+	} `json:"data"`
+}
+
+func lookupCariKodePos(ctx context.Context, term string) (string, string) {
+	if term == "" {
+		return "", ""
+	}
+	encoded := url.QueryEscape(term)
+	urls := []string{
+		fmt.Sprintf("https://carikodepos.id/api/search?q=%s&type=village", encoded),
+		fmt.Sprintf("https://carikodepos.id/api/search?q=%s", encoded),
+	}
+	client := &http.Client{Timeout: 4 * time.Second}
+
+	for _, u := range urls {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+		if err != nil {
+			continue
+		}
+		req.Header.Set("User-Agent", "GoWA-Weather-Bot/1.0 (+https://data.bmkg.go.id)")
+		resp, err := client.Do(req)
+		if err != nil {
+			continue
+		}
+		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
+			continue
+		}
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			continue
+		}
+
+		var res cariKodePosResponse
+		if err := json.Unmarshal(body, &res); err != nil {
+			continue
+		}
+		for _, item := range res.Data {
+			if item.Code != "" && bmkgAdm4Pattern.MatchString(item.Code) {
+				name := item.Name
+				if name == "" {
+					name = item.Title
+				}
+				return item.Code, name
+			}
+		}
+
+		for _, item := range res.Data {
+			if item.Village != nil && item.Village.Name != "" && !strings.EqualFold(item.Village.Name, term) {
+				if subCode, subName := lookupCariKodePos(ctx, item.Village.Name); subCode != "" {
+					return subCode, subName
+				}
+			}
+		}
+	}
+	return "", ""
+}
+
+func ResolveBMKGAdm4(ctx context.Context, query string) (string, string) {
 	q := strings.TrimSpace(query)
 	if q == "" {
 		return "31.71.01.1001", "Jakarta"
@@ -129,17 +220,52 @@ func ResolveBMKGAdm4(query string) (string, string) {
 		return q, q
 	}
 	lower := strings.ToLower(q)
-	lower = strings.TrimPrefix(lower, "kota ")
-	lower = strings.TrimPrefix(lower, "kab. ")
-	lower = strings.TrimPrefix(lower, "kabupaten ")
-	lower = strings.TrimSpace(lower)
+	cleaned := lower
+	prefixes := []string{
+		"desa ", "kelurahan ", "kel. ", "kecamatan ", "kec. ",
+		"kota ", "kabupaten ", "kab. ", "wilayah ",
+	}
+	for _, p := range prefixes {
+		cleaned = strings.TrimPrefix(cleaned, p)
+	}
+	cleaned = strings.TrimSpace(cleaned)
 
+	if val, ok := adm4Cache.Load(cleaned); ok {
+		if pair, ok2 := val.([2]string); ok2 {
+			return pair[0], pair[1]
+		}
+	}
+	if val, ok := adm4Cache.Load(lower); ok {
+		if pair, ok2 := val.([2]string); ok2 {
+			return pair[0], pair[1]
+		}
+	}
+
+	if code, ok := bmkgCityDirectory[cleaned]; ok {
+		return code, q
+	}
 	if code, ok := bmkgCityDirectory[lower]; ok {
 		return code, q
 	}
 
 	for k, v := range bmkgCityDirectory {
-		if strings.Contains(k, lower) || strings.Contains(lower, k) {
+		if k == cleaned || k == lower {
+			return v, q
+		}
+	}
+
+	onlineCode, onlineName := lookupCariKodePos(ctx, cleaned)
+	if onlineCode == "" && cleaned != lower {
+		onlineCode, onlineName = lookupCariKodePos(ctx, lower)
+	}
+	if onlineCode != "" {
+		adm4Cache.Store(cleaned, [2]string{onlineCode, onlineName})
+		adm4Cache.Store(lower, [2]string{onlineCode, onlineName})
+		return onlineCode, onlineName
+	}
+
+	for k, v := range bmkgCityDirectory {
+		if strings.Contains(k, cleaned) || strings.Contains(cleaned, k) {
 			return v, q
 		}
 	}
@@ -148,9 +274,9 @@ func ResolveBMKGAdm4(query string) (string, string) {
 }
 
 func FetchBMKGWeather(ctx context.Context, query string) (string, error) {
-	adm4Code, displayCity := ResolveBMKGAdm4(query)
+	adm4Code, displayCity := ResolveBMKGAdm4(ctx, query)
 	if adm4Code == "" {
-		return fmt.Sprintf("⚠️ Wilayah *%s* belum ditemukan dalam direktori BMKG.\n\nContoh penggunaan:\n• *!cuaca Jakarta*\n• *!cuaca Bandung*\n• *!cuaca Surabaya*\n• *!cuaca Medan*\n• Atau kode adm4: *!cuaca 31.71.01.1001*\n\n_Sumber: data.bmkg.go.id_", displayCity), nil
+		return fmt.Sprintf("⚠️ Wilayah *%s* belum ditemukan dalam direktori BMKG.\n\nContoh pencarian:\n• Nama desa: *!cuaca Torganda*, *!cuaca Bagan Baru*\n• Nama kecamatan: *!cuaca Torgamba*\n• Nama kota/kab: *!cuaca Rokan Hulu*, *!cuaca Jakarta*\n• Kode adm4: *!cuaca 12.22.03.2011*\n\n_Sumber: data.bmkg.go.id_", displayCity), nil
 	}
 
 	url := fmt.Sprintf("https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=%s", adm4Code)
@@ -190,10 +316,19 @@ func FetchBMKGWeather(ctx context.Context, query string) (string, error) {
 	slots := parsed.Data[0].Cuaca[0]
 	current := slots[0]
 
-	locHeader := loc.Kotkab
-	if loc.Kecamatan != "" && loc.Kecamatan != loc.Kotkab {
-		locHeader += fmt.Sprintf(", Kec. %s", loc.Kecamatan)
+	var locParts []string
+	if loc.Desa != "" && !strings.EqualFold(loc.Desa, loc.Kecamatan) && !strings.EqualFold(loc.Desa, loc.Kotkab) {
+		locParts = append(locParts, fmt.Sprintf("Desa %s", loc.Desa))
+	} else if loc.Desa != "" {
+		locParts = append(locParts, loc.Desa)
 	}
+	if loc.Kecamatan != "" && !strings.EqualFold(loc.Kecamatan, loc.Kotkab) {
+		locParts = append(locParts, fmt.Sprintf("Kec. %s", loc.Kecamatan))
+	}
+	if loc.Kotkab != "" {
+		locParts = append(locParts, loc.Kotkab)
+	}
+	locHeader := strings.Join(locParts, ", ")
 	if loc.Provinsi != "" {
 		locHeader += fmt.Sprintf(" (%s)", loc.Provinsi)
 	}

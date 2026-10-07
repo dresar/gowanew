@@ -785,7 +785,7 @@ func (s *BotService) HandleMessage(ctx context.Context, evt *events.Message, cli
 
 • *!menu* - Tampilkan daftar perintah bot ini
 • *!ping* - Tes kecepatan respon bot (latensi ms)
-• *!cuaca <kota>* - Prakiraan cuaca resmi BMKG
+• *!cuaca <desa/kota>* - Prakiraan cuaca resmi BMKG
 • *!ai <pesan>* - Mengobrol santai dengan asisten AI pintar
 • *!quote* - Kutipan motivasi & kata bijak harian
 • *!calc <ekspresi>* - Hitung kalkulasi matematika instan
