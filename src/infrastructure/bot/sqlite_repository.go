@@ -174,7 +174,7 @@ func (r *SQLiteRepository) scanGroupRule(scanner interface{ Scan(...any) error }
 
 func (r *SQLiteRepository) scanAIConfig(scanner interface{ Scan(...any) error }) (*domainBot.AIConfig, error) {
 	cfg := &domainBot.AIConfig{}
-	var autoReplyInt int
+	var autoReplyInt, allowGroupsInt int
 	var rawCreated, rawUpdated any
 	err := scanner.Scan(
 		&cfg.ID,
@@ -186,6 +186,10 @@ func (r *SQLiteRepository) scanAIConfig(scanner interface{ Scan(...any) error })
 		&cfg.Temperature,
 		&cfg.TriggerPrefix,
 		&autoReplyInt,
+		&cfg.AccessMode,
+		&cfg.AllowedJIDs,
+		&cfg.BlockedJIDs,
+		&allowGroupsInt,
 		&rawCreated,
 		&rawUpdated,
 	)
@@ -193,9 +197,37 @@ func (r *SQLiteRepository) scanAIConfig(scanner interface{ Scan(...any) error })
 		return nil, err
 	}
 	cfg.AutoReplyEnabled = autoReplyInt == 1
+	cfg.AllowGroups = allowGroupsInt == 1
 	cfg.CreatedAt = parseTime(rawCreated)
 	cfg.UpdatedAt = parseTime(rawUpdated)
 	return cfg, nil
+}
+
+func (r *SQLiteRepository) scanAIPersona(scanner interface{ Scan(...any) error }) (*domainBot.AIPersona, error) {
+	persona := &domainBot.AIPersona{}
+	var autoReplyInt, useMemoryInt, isActiveInt int
+	var rawCreated, rawUpdated any
+	err := scanner.Scan(
+		&persona.ID,
+		&persona.PhoneNumber,
+		&persona.ContactName,
+		&persona.Relationship,
+		&persona.CustomPrompt,
+		&autoReplyInt,
+		&useMemoryInt,
+		&isActiveInt,
+		&rawCreated,
+		&rawUpdated,
+	)
+	if err != nil {
+		return nil, err
+	}
+	persona.AutoReplyEnabled = autoReplyInt == 1
+	persona.UseMemory = useMemoryInt == 1
+	persona.IsActive = isActiveInt == 1
+	persona.CreatedAt = parseTime(rawCreated)
+	persona.UpdatedAt = parseTime(rawUpdated)
+	return persona, nil
 }
 
 func (r *SQLiteRepository) scanEventLog(scanner interface{ Scan(...any) error }) (*domainBot.EventLog, error) {
@@ -450,6 +482,35 @@ func (r *SQLiteRepository) DeleteRule(ctx context.Context, id int64) error {
 	return nil
 }
 
+func (r *SQLiteRepository) DeleteRulesBulk(ctx context.Context, ids []int64) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	placeholders := make([]string, len(ids))
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+	query := fmt.Sprintf("DELETE FROM bot_rules WHERE id IN (%s)", strings.Join(placeholders, ","))
+	res, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
+func (r *SQLiteRepository) ClearAllRules(ctx context.Context) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	_, err := r.db.ExecContext(ctx, "DELETE FROM bot_rules")
+	return err
+}
+
 func (r *SQLiteRepository) ToggleRuleActive(ctx context.Context, id int64) (*domainBot.Rule, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -474,7 +535,7 @@ func (r *SQLiteRepository) ToggleRuleActive(ctx context.Context, id int64) (*dom
 	}
 
 	selectQuery := `
-		SELECT id, trigger_type, trigger_value, scope, response_type,
+		SELECT id, trigger_type, trigger_value, recipient_jid, scope, response_type,
 			   response_content, media_url, is_active, created_at, updated_at
 		FROM bot_rules
 		WHERE id = ?
@@ -623,6 +684,7 @@ func (r *SQLiteRepository) GetAIConfig(ctx context.Context) (*domainBot.AIConfig
 	query := `
 		SELECT id, provider, base_url, api_key, model,
 			   system_prompt, temperature, trigger_prefix, auto_reply_enabled,
+			   access_mode, allowed_jids, blocked_jids, allow_groups,
 			   created_at, updated_at
 		FROM bot_ai_config
 		WHERE id = 1
@@ -642,6 +704,7 @@ func (r *SQLiteRepository) UpdateAIConfig(ctx context.Context, req domainBot.Upd
 	existing, err := r.scanAIConfig(r.db.QueryRowContext(ctx, `
 		SELECT id, provider, base_url, api_key, model,
 			   system_prompt, temperature, trigger_prefix, auto_reply_enabled,
+			   access_mode, allowed_jids, blocked_jids, allow_groups,
 			   created_at, updated_at
 		FROM bot_ai_config
 		WHERE id = 1
@@ -659,6 +722,10 @@ func (r *SQLiteRepository) UpdateAIConfig(ctx context.Context, req domainBot.Upd
 			Temperature:      0.7,
 			TriggerPrefix:    "!ai",
 			AutoReplyEnabled: false,
+			AccessMode:       "all",
+			AllowedJIDs:      "",
+			BlockedJIDs:      "",
+			AllowGroups:      true,
 			CreatedAt:        now,
 			UpdatedAt:        now,
 		}
@@ -690,18 +757,36 @@ func (r *SQLiteRepository) UpdateAIConfig(ctx context.Context, req domainBot.Upd
 	if req.AutoReplyEnabled != nil {
 		existing.AutoReplyEnabled = *req.AutoReplyEnabled
 	}
+	if req.AccessMode != nil {
+		existing.AccessMode = *req.AccessMode
+	}
+	if req.AllowedJIDs != nil {
+		existing.AllowedJIDs = *req.AllowedJIDs
+	}
+	if req.BlockedJIDs != nil {
+		existing.BlockedJIDs = *req.BlockedJIDs
+	}
+	if req.AllowGroups != nil {
+		existing.AllowGroups = *req.AllowGroups
+	}
 	existing.UpdatedAt = time.Now().UTC()
 
 	autoReplyInt := 0
 	if existing.AutoReplyEnabled {
 		autoReplyInt = 1
 	}
+	allowGroupsInt := 0
+	if existing.AllowGroups {
+		allowGroupsInt = 1
+	}
 
 	query := `
 		INSERT INTO bot_ai_config (
 			id, provider, base_url, api_key, model, system_prompt,
-			temperature, trigger_prefix, auto_reply_enabled, created_at, updated_at
-		) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			temperature, trigger_prefix, auto_reply_enabled,
+			access_mode, allowed_jids, blocked_jids, allow_groups,
+			created_at, updated_at
+		) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(id) DO UPDATE SET
 			provider = excluded.provider,
 			base_url = excluded.base_url,
@@ -711,6 +796,10 @@ func (r *SQLiteRepository) UpdateAIConfig(ctx context.Context, req domainBot.Upd
 			temperature = excluded.temperature,
 			trigger_prefix = excluded.trigger_prefix,
 			auto_reply_enabled = excluded.auto_reply_enabled,
+			access_mode = excluded.access_mode,
+			allowed_jids = excluded.allowed_jids,
+			blocked_jids = excluded.blocked_jids,
+			allow_groups = excluded.allow_groups,
 			updated_at = excluded.updated_at
 	`
 	_, err = r.db.ExecContext(ctx, query,
@@ -722,6 +811,10 @@ func (r *SQLiteRepository) UpdateAIConfig(ctx context.Context, req domainBot.Upd
 		existing.Temperature,
 		existing.TriggerPrefix,
 		autoReplyInt,
+		existing.AccessMode,
+		existing.AllowedJIDs,
+		existing.BlockedJIDs,
+		allowGroupsInt,
 		existing.CreatedAt,
 		existing.UpdatedAt,
 	)
@@ -875,4 +968,211 @@ func (r *SQLiteRepository) DeleteLogs(ctx context.Context, before time.Time) err
 func (r *SQLiteRepository) ClearLogs(ctx context.Context) error {
 	_, err := r.PurgeEventLogs(ctx, nil)
 	return err
+}
+
+func (r *SQLiteRepository) ListAIPersonas(ctx context.Context) ([]*domainBot.AIPersona, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	query := `
+		SELECT id, phone_number, contact_name, relationship, custom_prompt,
+			   auto_reply_enabled, use_memory, is_active, created_at, updated_at
+		FROM bot_ai_personas
+		ORDER BY id ASC
+	`
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	personas := make([]*domainBot.AIPersona, 0)
+	for rows.Next() {
+		persona, err := r.scanAIPersona(rows)
+		if err != nil {
+			return nil, err
+		}
+		personas = append(personas, persona)
+	}
+	return personas, rows.Err()
+}
+
+func (r *SQLiteRepository) GetAIPersonaByPhone(ctx context.Context, phone string) (*domainBot.AIPersona, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	query := `
+		SELECT id, phone_number, contact_name, relationship, custom_prompt,
+			   auto_reply_enabled, use_memory, is_active, created_at, updated_at
+		FROM bot_ai_personas
+		WHERE phone_number = ?
+		LIMIT 1
+	`
+	persona, err := r.scanAIPersona(r.db.QueryRowContext(ctx, query, phone))
+	if err == sql.ErrNoRows {
+		return nil, domainBot.ErrAIPersonaNotFound
+	}
+	return persona, err
+}
+
+func (r *SQLiteRepository) GetAIPersonaByID(ctx context.Context, id int64) (*domainBot.AIPersona, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	query := `
+		SELECT id, phone_number, contact_name, relationship, custom_prompt,
+			   auto_reply_enabled, use_memory, is_active, created_at, updated_at
+		FROM bot_ai_personas
+		WHERE id = ?
+		LIMIT 1
+	`
+	persona, err := r.scanAIPersona(r.db.QueryRowContext(ctx, query, id))
+	if err == sql.ErrNoRows {
+		return nil, domainBot.ErrAIPersonaNotFound
+	}
+	return persona, err
+}
+
+func (r *SQLiteRepository) CreateAIPersona(ctx context.Context, persona *domainBot.AIPersona) (*domainBot.AIPersona, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	now := time.Now().UTC()
+	persona.CreatedAt = now
+	persona.UpdatedAt = now
+
+	autoReplyInt := 1
+	if !persona.AutoReplyEnabled {
+		autoReplyInt = 0
+	}
+	useMemoryInt := 1
+	if !persona.UseMemory {
+		useMemoryInt = 0
+	}
+	isActiveInt := 1
+	if !persona.IsActive {
+		isActiveInt = 0
+	}
+
+	query := `
+		INSERT INTO bot_ai_personas (
+			phone_number, contact_name, relationship, custom_prompt,
+			auto_reply_enabled, use_memory, is_active, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`
+	res, err := r.db.ExecContext(ctx, query,
+		persona.PhoneNumber,
+		persona.ContactName,
+		persona.Relationship,
+		persona.CustomPrompt,
+		autoReplyInt,
+		useMemoryInt,
+		isActiveInt,
+		persona.CreatedAt,
+		persona.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+	persona.ID = id
+	return persona, nil
+}
+
+func (r *SQLiteRepository) UpdateAIPersona(ctx context.Context, id int64, req domainBot.UpdateAIPersonaRequest) (*domainBot.AIPersona, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	existing, err := r.scanAIPersona(r.db.QueryRowContext(ctx, `
+		SELECT id, phone_number, contact_name, relationship, custom_prompt,
+			   auto_reply_enabled, use_memory, is_active, created_at, updated_at
+		FROM bot_ai_personas
+		WHERE id = ?
+		LIMIT 1
+	`, id))
+	if err == sql.ErrNoRows {
+		return nil, domainBot.ErrAIPersonaNotFound
+	} else if err != nil {
+		return nil, err
+	}
+
+	if req.PhoneNumber != nil {
+		existing.PhoneNumber = *req.PhoneNumber
+	}
+	if req.ContactName != nil {
+		existing.ContactName = *req.ContactName
+	}
+	if req.Relationship != nil {
+		existing.Relationship = *req.Relationship
+	}
+	if req.CustomPrompt != nil {
+		existing.CustomPrompt = *req.CustomPrompt
+	}
+	if req.AutoReplyEnabled != nil {
+		existing.AutoReplyEnabled = *req.AutoReplyEnabled
+	}
+	if req.UseMemory != nil {
+		existing.UseMemory = *req.UseMemory
+	}
+	if req.IsActive != nil {
+		existing.IsActive = *req.IsActive
+	}
+	existing.UpdatedAt = time.Now().UTC()
+
+	autoReplyInt := 0
+	if existing.AutoReplyEnabled {
+		autoReplyInt = 1
+	}
+	useMemoryInt := 0
+	if existing.UseMemory {
+		useMemoryInt = 1
+	}
+	isActiveInt := 0
+	if existing.IsActive {
+		isActiveInt = 1
+	}
+
+	query := `
+		UPDATE bot_ai_personas
+		SET phone_number = ?, contact_name = ?, relationship = ?,
+			custom_prompt = ?, auto_reply_enabled = ?, use_memory = ?,
+			is_active = ?, updated_at = ?
+		WHERE id = ?
+	`
+	_, err = r.db.ExecContext(ctx, query,
+		existing.PhoneNumber,
+		existing.ContactName,
+		existing.Relationship,
+		existing.CustomPrompt,
+		autoReplyInt,
+		useMemoryInt,
+		isActiveInt,
+		existing.UpdatedAt,
+		id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return existing, nil
+}
+
+func (r *SQLiteRepository) DeleteAIPersona(ctx context.Context, id int64) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	res, err := r.db.ExecContext(ctx, "DELETE FROM bot_ai_personas WHERE id = ?", id)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return domainBot.ErrAIPersonaNotFound
+	}
+	return nil
 }

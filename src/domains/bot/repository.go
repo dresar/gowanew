@@ -11,6 +11,8 @@ type IRuleRepository interface {
 	ListRules(ctx context.Context, filter RuleFilter) ([]*Rule, error)
 	UpdateRule(ctx context.Context, id int64, req UpdateRuleRequest) (*Rule, error)
 	DeleteRule(ctx context.Context, id int64) error
+	DeleteRulesBulk(ctx context.Context, ids []int64) (int64, error)
+	ClearAllRules(ctx context.Context) error
 	ToggleRuleActive(ctx context.Context, id int64) (*Rule, error)
 	ToggleActive(ctx context.Context, id int64) (*Rule, error)
 }
@@ -29,6 +31,15 @@ type IAIConfigRepository interface {
 	UpdateAIConfig(ctx context.Context, req UpdateAIConfigRequest) (*AIConfig, error)
 }
 
+type IAIPersonaRepository interface {
+	ListAIPersonas(ctx context.Context) ([]*AIPersona, error)
+	GetAIPersonaByPhone(ctx context.Context, phone string) (*AIPersona, error)
+	GetAIPersonaByID(ctx context.Context, id int64) (*AIPersona, error)
+	CreateAIPersona(ctx context.Context, persona *AIPersona) (*AIPersona, error)
+	UpdateAIPersona(ctx context.Context, id int64, req UpdateAIPersonaRequest) (*AIPersona, error)
+	DeleteAIPersona(ctx context.Context, id int64) error
+}
+
 type IEventLogRepository interface {
 	CreateEventLog(ctx context.Context, log *EventLog) (*EventLog, error)
 	CreateLog(ctx context.Context, log *EventLog) (*EventLog, error)
@@ -44,5 +55,6 @@ type IBotRepository interface {
 	IRuleRepository
 	IGroupRuleRepository
 	IAIConfigRepository
+	IAIPersonaRepository
 	IEventLogRepository
 }

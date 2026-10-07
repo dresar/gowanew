@@ -129,6 +129,22 @@ func (m *mockBotUsecase) DeleteRule(_ context.Context, id int64) error {
 	return nil
 }
 
+func (m *mockBotUsecase) DeleteRulesBulk(_ context.Context, ids []int64) (int64, error) {
+	var count int64
+	for _, id := range ids {
+		if _, ok := m.rules[id]; ok {
+			delete(m.rules, id)
+			count++
+		}
+	}
+	return count, nil
+}
+
+func (m *mockBotUsecase) ClearAllRules(_ context.Context) error {
+	m.rules = make(map[int64]*domainBot.Rule)
+	return nil
+}
+
 func (m *mockBotUsecase) ToggleRuleActive(_ context.Context, id int64) (*domainBot.Rule, error) {
 	r, ok := m.rules[id]
 	if !ok {
@@ -187,6 +203,89 @@ func (m *mockBotUsecase) UpdateAIConfig(_ context.Context, req domainBot.UpdateA
 		m.aiConfig.AutoReplyEnabled = *req.AutoReplyEnabled
 	}
 	return m.aiConfig, nil
+}
+
+func (m *mockBotUsecase) ListAIPersonas(_ context.Context) ([]*domainBot.AIPersona, error) {
+	return []*domainBot.AIPersona{
+		{
+			ID:               1,
+			PhoneNumber:      "6285216149732",
+			ContactName:      "Indah 🧕🌿💝",
+			Relationship:     "pacar",
+			CustomPrompt:     "Halo sayang",
+			AutoReplyEnabled: true,
+			UseMemory:        true,
+			IsActive:         true,
+		},
+	}, nil
+}
+
+func (m *mockBotUsecase) GetAIPersonaByID(_ context.Context, id int64) (*domainBot.AIPersona, error) {
+	if id == 1 {
+		return &domainBot.AIPersona{
+			ID:               1,
+			PhoneNumber:      "6285216149732",
+			ContactName:      "Indah 🧕🌿💝",
+			Relationship:     "pacar",
+			CustomPrompt:     "Halo sayang",
+			AutoReplyEnabled: true,
+			UseMemory:        true,
+			IsActive:         true,
+		}, nil
+	}
+	return nil, domainBot.ErrAIPersonaNotFound
+}
+
+func (m *mockBotUsecase) GetAIPersonaByPhone(_ context.Context, phone string) (*domainBot.AIPersona, error) {
+	if phone == "6285216149732" {
+		return &domainBot.AIPersona{
+			ID:               1,
+			PhoneNumber:      "6285216149732",
+			ContactName:      "Indah 🧕🌿💝",
+			Relationship:     "pacar",
+			CustomPrompt:     "Halo sayang",
+			AutoReplyEnabled: true,
+			UseMemory:        true,
+			IsActive:         true,
+		}, nil
+	}
+	return nil, domainBot.ErrAIPersonaNotFound
+}
+
+func (m *mockBotUsecase) CreateAIPersona(_ context.Context, req domainBot.CreateAIPersonaRequest) (*domainBot.AIPersona, error) {
+	return &domainBot.AIPersona{
+		ID:               2,
+		PhoneNumber:      req.PhoneNumber,
+		ContactName:      req.ContactName,
+		Relationship:     req.Relationship,
+		CustomPrompt:     req.CustomPrompt,
+		AutoReplyEnabled: true,
+		UseMemory:        true,
+		IsActive:         true,
+	}, nil
+}
+
+func (m *mockBotUsecase) UpdateAIPersona(_ context.Context, id int64, req domainBot.UpdateAIPersonaRequest) (*domainBot.AIPersona, error) {
+	if id != 1 {
+		return nil, domainBot.ErrAIPersonaNotFound
+	}
+	return &domainBot.AIPersona{
+		ID:               1,
+		PhoneNumber:      "6285216149732",
+		ContactName:      "Indah",
+		Relationship:     "pacar",
+		CustomPrompt:     "Halo sayang",
+		AutoReplyEnabled: true,
+		UseMemory:        true,
+		IsActive:         true,
+	}, nil
+}
+
+func (m *mockBotUsecase) DeleteAIPersona(_ context.Context, id int64) error {
+	if id != 1 {
+		return domainBot.ErrAIPersonaNotFound
+	}
+	return nil
 }
 
 func (m *mockBotUsecase) ChatWithAI(_ context.Context, req domainBot.ChatRequest) (*domainBot.ChatResult, error) {
@@ -474,3 +573,68 @@ func TestBotRealSQLiteIntegration(t *testing.T) {
 	require.True(t, ok)
 	assert.Len(t, rulesList, 1)
 }
+
+func TestBotAIPersonasEndpoints(t *testing.T) {
+	app, _ := setupTestBotApp()
+
+	resp, body, err := doReq(app, http.MethodGet, "/bot/ai/personas", nil)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	var listData utils.ResponseData
+	require.NoError(t, json.Unmarshal(body, &listData))
+	assert.Equal(t, "SUCCESS", listData.Code)
+
+	resp, _, err = doReq(app, http.MethodGet, "/bot/ai/personas/1", nil)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	newPersona := domainBot.CreateAIPersonaRequest{
+		PhoneNumber:  "628123456789",
+		ContactName:  "Budi",
+		Relationship: "teman",
+		CustomPrompt: "Balas santai",
+	}
+	resp, _, err = doReq(app, http.MethodPost, "/bot/ai/personas", newPersona)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+
+	updatePrompt := "Update prompt"
+	updatePersona := domainBot.UpdateAIPersonaRequest{
+		CustomPrompt: &updatePrompt,
+	}
+	resp, _, err = doReq(app, http.MethodPut, "/bot/ai/personas/1", updatePersona)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	resp, _, err = doReq(app, http.MethodDelete, "/bot/ai/personas/1", nil)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestBotHandler_BulkDeleteRules(t *testing.T) {
+	app, mock := setupTestBotApp()
+
+	_, _ = mock.CreateRule(context.Background(), domainBot.CreateRuleRequest{
+		TriggerType:     domainBot.TriggerExact,
+		TriggerValue:    "test1",
+		Scope:           domainBot.ScopeAll,
+		ResponseType:    domainBot.ResponseTypeText,
+		ResponseContent: "resp1",
+	})
+	_, _ = mock.CreateRule(context.Background(), domainBot.CreateRuleRequest{
+		TriggerType:     domainBot.TriggerExact,
+		TriggerValue:    "test2",
+		Scope:           domainBot.ScopeAll,
+		ResponseType:    domainBot.ResponseTypeText,
+		ResponseContent: "resp2",
+	})
+
+	resp, _, err := doReq(app, http.MethodDelete, "/bot/rules", BulkDeleteRulesPayload{IDs: []int64{1}})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	resp, _, err = doReq(app, http.MethodDelete, "/bot/rules?all=true", nil)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+

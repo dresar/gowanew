@@ -124,6 +124,35 @@ var migrations = []schemaMigration{
 			`CREATE INDEX IF NOT EXISTS idx_bot_rules_recipient_jid ON bot_rules(recipient_jid)`,
 		},
 	},
+	{
+		version: 10,
+		statements: []string{
+			`ALTER TABLE bot_ai_config ADD COLUMN access_mode TEXT NOT NULL DEFAULT 'all'`,
+			`ALTER TABLE bot_ai_config ADD COLUMN allowed_jids TEXT NOT NULL DEFAULT ''`,
+			`ALTER TABLE bot_ai_config ADD COLUMN blocked_jids TEXT NOT NULL DEFAULT ''`,
+			`ALTER TABLE bot_ai_config ADD COLUMN allow_groups INTEGER NOT NULL DEFAULT 1`,
+			`CREATE TABLE IF NOT EXISTS bot_ai_personas (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				phone_number TEXT NOT NULL UNIQUE,
+				contact_name TEXT NOT NULL DEFAULT '',
+				relationship TEXT NOT NULL DEFAULT 'pacar',
+				custom_prompt TEXT NOT NULL,
+				auto_reply_enabled INTEGER NOT NULL DEFAULT 1 CHECK (auto_reply_enabled IN (0, 1)),
+				use_memory INTEGER NOT NULL DEFAULT 1 CHECK (use_memory IN (0, 1)),
+				is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
+				created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+				updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+			)`,
+			`CREATE INDEX IF NOT EXISTS idx_bot_ai_personas_phone_number ON bot_ai_personas(phone_number)`,
+			`INSERT OR IGNORE INTO bot_ai_personas (
+				phone_number, contact_name, relationship, custom_prompt, auto_reply_enabled, use_memory, is_active
+			) VALUES (
+				'6285216149732', 'Indah 🧕🌿💝', 'pacar',
+				'Kamu adalah Eka Syarif Maulana S.Kom yang membalas WhatsApp Indah, pacar tercintamu (+62 852-1614-9732). Berbicaralah dengan gaya santai, mesra, manis, perhatian (tanya makan, kabar, jangan begadang, ingatkan sholat), penuh kasih sayang layaknya pasangan kekasih sejati. Selalu gunakan konteks obrolan masa lalu dan memori bersama Indah. Dilarang keras terdengar seperti AI, bot, atau customer service!',
+				1, 1, 1
+			)`,
+		},
+	},
 }
 
 func RunMigrations(ctx context.Context, db *sql.DB) error {

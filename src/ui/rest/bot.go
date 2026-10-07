@@ -30,6 +30,8 @@ func InitRestBot(app fiber.Router, botUsecase usecase.IBotUsecase, dm *whatsapp.
 	app.Post("/bot/rules", h.CreateRule)
 	app.Post("/bot/rules/import", h.ImportRules)
 	app.Post("/bot/rules/auto-tag-pacar", h.AutoTagPacar)
+	app.Post("/bot/rules/auto-tag-special", h.AutoTagPacar)
+	app.Delete("/bot/rules", h.BulkDeleteRules)
 	app.Get("/bot/rules/:id", h.GetRule)
 	app.Put("/bot/rules/:id", h.UpdateRule)
 	app.Delete("/bot/rules/:id", h.DeleteRule)
@@ -44,6 +46,11 @@ func InitRestBot(app fiber.Router, botUsecase usecase.IBotUsecase, dm *whatsapp.
 	app.Get("/bot/ai/config", h.GetAIConfig)
 	app.Put("/bot/ai/config", h.UpdateAIConfig)
 	app.Post("/bot/ai/chat", h.ChatWithAI)
+	app.Get("/bot/ai/personas", h.ListAIPersonas)
+	app.Post("/bot/ai/personas", h.CreateAIPersona)
+	app.Get("/bot/ai/personas/:id", h.GetAIPersona)
+	app.Put("/bot/ai/personas/:id", h.UpdateAIPersona)
+	app.Delete("/bot/ai/personas/:id", h.DeleteAIPersona)
 
 	app.Get("/bot/ai/tools", h.ListTools)
 	app.Post("/bot/ai/tools", h.ExecuteTool)
@@ -256,6 +263,68 @@ func (h *BotHandler) DeleteRule(c fiber.Ctx) error {
 	})
 }
 
+type BulkDeleteRulesPayload struct {
+	All bool    `json:"all"`
+	IDs []int64 `json:"ids"`
+}
+
+func (h *BotHandler) BulkDeleteRules(c fiber.Ctx) error {
+	allParam := c.Query("all")
+	if allParam == "true" || allParam == "1" {
+		if err := h.botUsecase.ClearAllRules(c.Context()); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(utils.ResponseData{
+				Code:    "ERROR",
+				Message: err.Error(),
+			})
+		}
+		return c.JSON(utils.ResponseData{
+			Code:    "SUCCESS",
+			Message: "all rules deleted",
+			Results: map[string]any{"all": true},
+		})
+	}
+
+	var req BulkDeleteRulesPayload
+	if len(c.Body()) > 0 {
+		_ = c.Bind().Body(&req)
+	}
+
+	if req.All {
+		if err := h.botUsecase.ClearAllRules(c.Context()); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(utils.ResponseData{
+				Code:    "ERROR",
+				Message: err.Error(),
+			})
+		}
+		return c.JSON(utils.ResponseData{
+			Code:    "SUCCESS",
+			Message: "all rules deleted",
+			Results: map[string]any{"all": true},
+		})
+	}
+
+	if len(req.IDs) == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
+			Code:    "BAD_REQUEST",
+			Message: "no rule ids provided or all parameter required",
+		})
+	}
+
+	deletedCount, err := h.botUsecase.DeleteRulesBulk(c.Context(), req.IDs)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(utils.ResponseData{
+			Code:    "ERROR",
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(utils.ResponseData{
+		Code:    "SUCCESS",
+		Message: "rules deleted",
+		Results: map[string]any{"deleted_count": deletedCount, "ids": req.IDs},
+	})
+}
+
 func (h *BotHandler) ToggleRule(c fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
@@ -449,6 +518,139 @@ func (h *BotHandler) ChatWithAI(c fiber.Ctx) error {
 		Code:    "SUCCESS",
 		Message: "ai response generated",
 		Results: res,
+	})
+}
+
+func (h *BotHandler) ListAIPersonas(c fiber.Ctx) error {
+	personas, err := h.botUsecase.ListAIPersonas(c.Context())
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(utils.ResponseData{
+			Code:    "ERROR",
+			Message: err.Error(),
+		})
+	}
+	return c.JSON(utils.ResponseData{
+		Code:    "SUCCESS",
+		Message: "ai personas retrieved",
+		Results: personas,
+	})
+}
+
+func (h *BotHandler) GetAIPersona(c fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
+			Code:    "BAD_REQUEST",
+			Message: "invalid id",
+		})
+	}
+	persona, err := h.botUsecase.GetAIPersonaByID(c.Context(), id)
+	if err != nil {
+		if err == domainBot.ErrAIPersonaNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(utils.ResponseData{
+				Code:    "NOT_FOUND",
+				Message: err.Error(),
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(utils.ResponseData{
+			Code:    "ERROR",
+			Message: err.Error(),
+		})
+	}
+	return c.JSON(utils.ResponseData{
+		Code:    "SUCCESS",
+		Message: "ai persona retrieved",
+		Results: persona,
+	})
+}
+
+func (h *BotHandler) CreateAIPersona(c fiber.Ctx) error {
+	var req domainBot.CreateAIPersonaRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
+			Code:    "BAD_REQUEST",
+			Message: "invalid json",
+		})
+	}
+	if strings.TrimSpace(req.PhoneNumber) == "" || strings.TrimSpace(req.CustomPrompt) == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
+			Code:    "BAD_REQUEST",
+			Message: "phone_number and custom_prompt are required",
+		})
+	}
+	persona, err := h.botUsecase.CreateAIPersona(c.Context(), req)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
+			Code:    "BAD_REQUEST",
+			Message: err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusCreated).JSON(utils.ResponseData{
+		Code:    "SUCCESS",
+		Message: "ai persona created",
+		Results: persona,
+	})
+}
+
+func (h *BotHandler) UpdateAIPersona(c fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
+			Code:    "BAD_REQUEST",
+			Message: "invalid id",
+		})
+	}
+	var req domainBot.UpdateAIPersonaRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
+			Code:    "BAD_REQUEST",
+			Message: "invalid json",
+		})
+	}
+	persona, err := h.botUsecase.UpdateAIPersona(c.Context(), id, req)
+	if err != nil {
+		if err == domainBot.ErrAIPersonaNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(utils.ResponseData{
+				Code:    "NOT_FOUND",
+				Message: err.Error(),
+			})
+		}
+		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
+			Code:    "BAD_REQUEST",
+			Message: err.Error(),
+		})
+	}
+	return c.JSON(utils.ResponseData{
+		Code:    "SUCCESS",
+		Message: "ai persona updated",
+		Results: persona,
+	})
+}
+
+func (h *BotHandler) DeleteAIPersona(c fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
+			Code:    "BAD_REQUEST",
+			Message: "invalid id",
+		})
+	}
+	err = h.botUsecase.DeleteAIPersona(c.Context(), id)
+	if err != nil {
+		if err == domainBot.ErrAIPersonaNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(utils.ResponseData{
+				Code:    "NOT_FOUND",
+				Message: err.Error(),
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(utils.ResponseData{
+			Code:    "ERROR",
+			Message: err.Error(),
+		})
+	}
+	return c.JSON(utils.ResponseData{
+		Code:    "SUCCESS",
+		Message: "ai persona deleted",
 	})
 }
 

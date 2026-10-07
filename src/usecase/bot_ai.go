@@ -86,6 +86,23 @@ Aturan penting:
 - Jika lawan bicara bertanya apakah kamu kenal dia (misal: "kamu kenal aku?"), jawab secara natural dan santai bahwa kamu kenal dia dari nama/username profil WhatsApp miliknya.
 - Jawab to the point, singkat, natural, tanpa pembuka atau penutup bertele-tele.`
 
+func normalizePhoneNumber(val string) string {
+	clean := strings.TrimSuffix(val, "@s.whatsapp.net")
+	clean = strings.TrimSuffix(clean, "@g.us")
+	clean = strings.TrimSuffix(clean, "@lid")
+	var b strings.Builder
+	for _, r := range clean {
+		if r >= '0' && r <= '9' {
+			b.WriteRune(r)
+		}
+	}
+	digits := b.String()
+	if strings.HasPrefix(digits, "08") {
+		digits = "62" + digits[1:]
+	}
+	return digits
+}
+
 func sanitizeContainerTag(jid string) string {
 	clean := strings.TrimSuffix(jid, "@s.whatsapp.net")
 	clean = strings.TrimSuffix(clean, "@g.us")
@@ -225,20 +242,48 @@ func (s *BotService) ChatWithAI(ctx context.Context, req domainBot.ChatRequest) 
 		sysPrompt = defaultAntiSlopPrompt
 	}
 
+	senderPhone := normalizePhoneNumber(req.SenderJID)
+	var matchedPersona *domainBot.AIPersona
+	if senderPhone != "" {
+		p, pErr := s.repo.GetAIPersonaByPhone(ctx, senderPhone)
+		if pErr == nil && p != nil && p.IsActive {
+			matchedPersona = p
+		}
+	}
+
 	tag := ""
 	if req.SenderJID != "" {
 		tag = sanitizeContainerTag(req.SenderJID)
 	}
 
-	if req.SenderName != "" {
-		sysPrompt += fmt.Sprintf("\n\nLawan bicaramu saat ini memiliki nama/username WhatsApp: %s. Kamu tahu namanya dari data profil WhatsApp dia.", req.SenderName)
+	if matchedPersona != nil {
+		if strings.TrimSpace(matchedPersona.CustomPrompt) != "" {
+			sysPrompt = strings.TrimSpace(matchedPersona.CustomPrompt)
+		}
+		if matchedPersona.ContactName != "" {
+			rel := matchedPersona.Relationship
+			if rel == "" {
+				rel = "teman"
+			}
+			sysPrompt += fmt.Sprintf("\n\nLawan bicaramu bernama: %s (Relasi: %s). Perlakukan dia sesuai dengan relasi ini.", matchedPersona.ContactName, rel)
+		}
+		sysPrompt += "\n\nInstruksi Khusus Gaya Komunikasi:\n- Balaslah dengan bahasa super natural, santai, ekspresif, tidak kaku, manusiawi seutuhnya, dan selaras dengan riwayat percakapan sebelumnya.\n- Dilarang keras terdengar seperti AI, bot, robot, atau asisten virtual formal."
+	} else {
+		if req.SenderName != "" {
+			sysPrompt += fmt.Sprintf("\n\nLawan bicaramu saat ini memiliki nama/username WhatsApp: %s. Kamu tahu namanya dari data profil WhatsApp dia.", req.SenderName)
+		}
+
+		if strings.Contains(req.SenderJID, "6285216149732") || strings.Contains(req.SenderName, "Indah") {
+			sysPrompt += "\n\nPerhatian Khusus: Kontak ini adalah Indah (+62 852-1614-9732), pacar tercinta dari Eka Syarif Maulana. Balaslah dengan gaya obrolan sehari-hari pasangan: sangat hangat, manis, perhatian (tanya makan, kabar, jangan begadang), akrab, santai, dan penuh kasih sayang. Dilarang keras bersikap kaku atau formal seperti robot/CS."
+		}
 	}
 
-	if strings.Contains(req.SenderJID, "6285216149732") || strings.Contains(req.SenderName, "Indah") {
-		sysPrompt += "\n\nPerhatian Khusus: Kontak ini adalah Indah (+62 852-1614-9732), pacar tercinta dari Eka Syarif Maulana. Balaslah dengan gaya obrolan sehari-hari pasangan: sangat hangat, manis, perhatian (tanya makan, kabar, jangan begadang), akrab, santai, dan penuh kasih sayang. Dilarang keras bersikap kaku atau formal seperti robot/CS."
+	useMemory := true
+	if matchedPersona != nil && !matchedPersona.UseMemory {
+		useMemory = false
 	}
 
-	if config.SupermemoryEnabled && config.SupermemoryAPIKey != "" && tag != "" {
+	if useMemory && config.SupermemoryEnabled && config.SupermemoryAPIKey != "" && tag != "" {
 		memContext := querySupermemory(ctx, config.SupermemoryAPIKey, tag, req.Message)
 		if memContext != "" {
 			sysPrompt += "\n\n[MEMORI KONTEKS PERCAKAPAN SEBELUMNYA DENGAN KONTAK INI]:\n" + memContext
@@ -331,7 +376,7 @@ func (s *BotService) ChatWithAI(ctx context.Context, req domainBot.ChatRequest) 
 		usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 	}
 
-	if config.SupermemoryEnabled && config.SupermemoryAPIKey != "" && tag != "" && reply != "" {
+	if useMemory && config.SupermemoryEnabled && config.SupermemoryAPIKey != "" && tag != "" && reply != "" {
 		ingestSupermemoryAsync(config.SupermemoryAPIKey, tag, req.Message, reply)
 	}
 
@@ -752,4 +797,76 @@ func (s *BotService) ExecuteTool(ctx context.Context, client *whatsmeow.Client, 
 		LatencyMS: latency,
 		Output:    output,
 	}, nil
+}
+
+func (s *BotService) ListAIPersonas(ctx context.Context) ([]*domainBot.AIPersona, error) {
+	return s.repo.ListAIPersonas(ctx)
+}
+
+func (s *BotService) GetAIPersonaByID(ctx context.Context, id int64) (*domainBot.AIPersona, error) {
+	return s.repo.GetAIPersonaByID(ctx, id)
+}
+
+func (s *BotService) GetAIPersonaByPhone(ctx context.Context, phone string) (*domainBot.AIPersona, error) {
+	cleanPhone := normalizePhoneNumber(phone)
+	if cleanPhone == "" {
+		cleanPhone = phone
+	}
+	return s.repo.GetAIPersonaByPhone(ctx, cleanPhone)
+}
+
+func (s *BotService) CreateAIPersona(ctx context.Context, req domainBot.CreateAIPersonaRequest) (*domainBot.AIPersona, error) {
+	cleanPhone := normalizePhoneNumber(req.PhoneNumber)
+	if cleanPhone == "" {
+		return nil, domainBot.ErrMissingPhoneNumber
+	}
+	if strings.TrimSpace(req.CustomPrompt) == "" {
+		return nil, domainBot.ErrMissingCustomPrompt
+	}
+
+	autoReply := true
+	if req.AutoReplyEnabled != nil {
+		autoReply = *req.AutoReplyEnabled
+	}
+	useMemory := true
+	if req.UseMemory != nil {
+		useMemory = *req.UseMemory
+	}
+	isActive := true
+	if req.IsActive != nil {
+		isActive = *req.IsActive
+	}
+
+	persona := &domainBot.AIPersona{
+		PhoneNumber:      cleanPhone,
+		ContactName:      strings.TrimSpace(req.ContactName),
+		Relationship:     strings.TrimSpace(req.Relationship),
+		CustomPrompt:     strings.TrimSpace(req.CustomPrompt),
+		AutoReplyEnabled: autoReply,
+		UseMemory:        useMemory,
+		IsActive:         isActive,
+	}
+	return s.repo.CreateAIPersona(ctx, persona)
+}
+
+func (s *BotService) UpdateAIPersona(ctx context.Context, id int64, req domainBot.UpdateAIPersonaRequest) (*domainBot.AIPersona, error) {
+	if req.PhoneNumber != nil {
+		cleanPhone := normalizePhoneNumber(*req.PhoneNumber)
+		if cleanPhone == "" {
+			return nil, domainBot.ErrMissingPhoneNumber
+		}
+		req.PhoneNumber = &cleanPhone
+	}
+	if req.CustomPrompt != nil {
+		trimmed := strings.TrimSpace(*req.CustomPrompt)
+		if trimmed == "" {
+			return nil, domainBot.ErrMissingCustomPrompt
+		}
+		req.CustomPrompt = &trimmed
+	}
+	return s.repo.UpdateAIPersona(ctx, id, req)
+}
+
+func (s *BotService) DeleteAIPersona(ctx context.Context, id int64) error {
+	return s.repo.DeleteAIPersona(ctx, id)
 }

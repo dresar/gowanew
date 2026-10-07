@@ -287,7 +287,7 @@ func registerUIRoute(apiGroup fiber.Router, ctx context.Context) {
 		go uiManager.StartAutoUpdate(ctx)
 	}
 
-	apiGroup.Get("/", func(c fiber.Ctx) error {
+	uiHandler := func(c fiber.Ctx) error {
 		content, etag, ok := uiManager.Content()
 		if !ok {
 			c.Type("html")
@@ -301,7 +301,41 @@ func registerUIRoute(apiGroup fiber.Router, ctx context.Context) {
 		}
 		c.Type("html")
 		return c.Send(content)
-	})
+	}
+
+	pureUIRoutes := []string{
+		"/",
+		"/app",
+		"/connect",
+		"/dashboard",
+		"/messaging",
+		"/scheduled",
+		"/settings",
+		"/misc",
+		"/account",
+		"/bot/auto-replies",
+		"/bot/ai",
+		"/bot/menu",
+		"/bot/groups",
+	}
+	for _, route := range pureUIRoutes {
+		apiGroup.Get(route, uiHandler)
+	}
+
+	conditionalRoutes := []string{
+		"/chats",
+		"/groups",
+		"/messages",
+		"/send",
+	}
+	for _, route := range conditionalRoutes {
+		apiGroup.Get(route, func(c fiber.Ctx) error {
+			if strings.Contains(c.Get("Accept"), "text/html") && c.Get("X-Device-Id") == "" {
+				return uiHandler(c)
+			}
+			return c.Next()
+		})
+	}
 }
 
 func newCORSMiddleware() fiber.Handler {

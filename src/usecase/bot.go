@@ -45,6 +45,8 @@ type IBotUsecase interface {
 	ListRules(ctx context.Context, filter domainBot.RuleFilter) ([]*domainBot.Rule, error)
 	UpdateRule(ctx context.Context, id int64, req domainBot.UpdateRuleRequest) (*domainBot.Rule, error)
 	DeleteRule(ctx context.Context, id int64) error
+	DeleteRulesBulk(ctx context.Context, ids []int64) (int64, error)
+	ClearAllRules(ctx context.Context) error
 	ToggleRuleActive(ctx context.Context, id int64) (*domainBot.Rule, error)
 
 	GetGroupRule(ctx context.Context, groupJID string) (*domainBot.GroupRule, error)
@@ -54,6 +56,12 @@ type IBotUsecase interface {
 
 	GetAIConfig(ctx context.Context) (*domainBot.AIConfig, error)
 	UpdateAIConfig(ctx context.Context, req domainBot.UpdateAIConfigRequest) (*domainBot.AIConfig, error)
+	ListAIPersonas(ctx context.Context) ([]*domainBot.AIPersona, error)
+	GetAIPersonaByID(ctx context.Context, id int64) (*domainBot.AIPersona, error)
+	GetAIPersonaByPhone(ctx context.Context, phone string) (*domainBot.AIPersona, error)
+	CreateAIPersona(ctx context.Context, req domainBot.CreateAIPersonaRequest) (*domainBot.AIPersona, error)
+	UpdateAIPersona(ctx context.Context, id int64, req domainBot.UpdateAIPersonaRequest) (*domainBot.AIPersona, error)
+	DeleteAIPersona(ctx context.Context, id int64) error
 	ChatWithAI(ctx context.Context, req domainBot.ChatRequest) (*domainBot.ChatResult, error)
 	GetTools(ctx context.Context) ([]domainBot.ToolDefinition, error)
 	ExecuteTool(ctx context.Context, client *whatsmeow.Client, chatStorageRepo domainChatStorage.IChatStorageRepository, req domainBot.ToolRequest) (*domainBot.ToolResult, error)
@@ -213,6 +221,14 @@ func (s *BotService) UpdateRule(ctx context.Context, id int64, req domainBot.Upd
 
 func (s *BotService) DeleteRule(ctx context.Context, id int64) error {
 	return s.repo.DeleteRule(ctx, id)
+}
+
+func (s *BotService) DeleteRulesBulk(ctx context.Context, ids []int64) (int64, error) {
+	return s.repo.DeleteRulesBulk(ctx, ids)
+}
+
+func (s *BotService) ClearAllRules(ctx context.Context) error {
+	return s.repo.ClearAllRules(ctx)
 }
 
 func (s *BotService) ToggleRuleActive(ctx context.Context, id int64) (*domainBot.Rule, error) {
@@ -389,47 +405,81 @@ func (s *BotService) MatchRule(rules []*domainBot.Rule, text string, isGroup boo
 	return s.MatchRuleForSender(rules, text, isGroup, "")
 }
 
+func isSpecialRecipientRule(ruleTarget string) bool {
+	clean := strings.TrimSpace(ruleTarget)
+	return clean != "" && clean != "all" && clean != "global"
+}
+
+func matchRecipientPhone(ruleTarget string, senderJID string, senderDigits string) bool {
+	cleanTarget := strings.TrimSpace(ruleTarget)
+	if !isSpecialRecipientRule(cleanTarget) {
+		return true
+	}
+	if senderDigits == "" && strings.TrimSpace(senderJID) == "" {
+		return false
+	}
+
+	targets := strings.FieldsFunc(cleanTarget, func(r rune) bool {
+		return r == ',' || r == ';' || r == '\n' || r == '\r' || r == ' ' || r == '|'
+	})
+
+	for _, t := range targets {
+		t = strings.TrimSpace(t)
+		if t == "" {
+			continue
+		}
+		tDigits := cleanPhoneDigits(t)
+		if tDigits != "" && senderDigits != "" {
+			if senderDigits == tDigits || strings.HasSuffix(senderDigits, tDigits) || strings.HasSuffix(tDigits, senderDigits) {
+				return true
+			}
+		}
+		if senderJID != "" && (strings.EqualFold(senderJID, t) || strings.Contains(strings.ToLower(senderJID), strings.ToLower(t))) {
+			return true
+		}
+	}
+	return false
+}
+
+func matchRuleTrigger(rule *domainBot.Rule, cleanText string, lowerText string) bool {
+	lowerTrigger := strings.ToLower(strings.TrimSpace(rule.TriggerValue))
+	switch rule.TriggerType {
+	case domainBot.TriggerExact:
+		return strings.EqualFold(cleanText, strings.TrimSpace(rule.TriggerValue))
+	case domainBot.TriggerContains:
+		return strings.Contains(lowerText, lowerTrigger)
+	case domainBot.TriggerStartsWith:
+		return strings.HasPrefix(lowerText, lowerTrigger)
+	case domainBot.TriggerRegex:
+		return safeRegexMatch(rule.TriggerValue, cleanText)
+	default:
+		return false
+	}
+}
+
 func (s *BotService) MatchRuleForSender(rules []*domainBot.Rule, text string, isGroup bool, senderJID string) *domainBot.Rule {
 	cleanText := strings.TrimSpace(text)
 	lowerText := strings.ToLower(cleanText)
 	senderDigits := cleanPhoneDigits(senderJID)
 
-	isIndahSender := senderDigits != "" && (strings.Contains(senderDigits, "6285216149732") || strings.Contains(senderJID, "6285216149732"))
-
-	if isIndahSender {
-		for _, rule := range rules {
-			if !rule.IsActive {
-				continue
-			}
-			ruleTarget := strings.TrimSpace(rule.RecipientJID)
-			ruleTargetDigits := cleanPhoneDigits(ruleTarget)
-			if ruleTargetDigits == "" || (!strings.Contains(ruleTargetDigits, "6285216149732") && !strings.Contains(ruleTarget, "6285216149732")) {
-				continue
-			}
-			if rule.Scope == domainBot.ScopePrivate && isGroup {
-				continue
-			}
-			if rule.Scope == domainBot.ScopeGroup && !isGroup {
-				continue
-			}
-
-			matched := false
-			lowerTrigger := strings.ToLower(strings.TrimSpace(rule.TriggerValue))
-
-			switch rule.TriggerType {
-			case domainBot.TriggerExact:
-				matched = strings.EqualFold(cleanText, strings.TrimSpace(rule.TriggerValue))
-			case domainBot.TriggerContains:
-				matched = strings.Contains(lowerText, lowerTrigger)
-			case domainBot.TriggerStartsWith:
-				matched = strings.HasPrefix(lowerText, lowerTrigger)
-			case domainBot.TriggerRegex:
-				matched = safeRegexMatch(rule.TriggerValue, cleanText)
-			}
-
-			if matched {
-				return rule
-			}
+	for _, rule := range rules {
+		if !rule.IsActive {
+			continue
+		}
+		if !isSpecialRecipientRule(rule.RecipientJID) {
+			continue
+		}
+		if rule.Scope == domainBot.ScopePrivate && isGroup {
+			continue
+		}
+		if rule.Scope == domainBot.ScopeGroup && !isGroup {
+			continue
+		}
+		if !matchRecipientPhone(rule.RecipientJID, senderJID, senderDigits) {
+			continue
+		}
+		if matchRuleTrigger(rule, cleanText, lowerText) {
+			return rule
 		}
 	}
 
@@ -437,41 +487,16 @@ func (s *BotService) MatchRuleForSender(rules []*domainBot.Rule, text string, is
 		if !rule.IsActive {
 			continue
 		}
-
-		ruleTarget := strings.TrimSpace(rule.RecipientJID)
-		ruleTargetDigits := cleanPhoneDigits(ruleTarget)
-
-		if ruleTargetDigits != "" && ruleTarget != "all" && ruleTarget != "global" {
-			if senderDigits == "" {
-				continue
-			}
-			if !strings.Contains(senderDigits, ruleTargetDigits) && !strings.Contains(ruleTargetDigits, senderDigits) {
-				continue
-			}
+		if isSpecialRecipientRule(rule.RecipientJID) {
+			continue
 		}
-
 		if rule.Scope == domainBot.ScopePrivate && isGroup {
 			continue
 		}
 		if rule.Scope == domainBot.ScopeGroup && !isGroup {
 			continue
 		}
-
-		matched := false
-		lowerTrigger := strings.ToLower(strings.TrimSpace(rule.TriggerValue))
-
-		switch rule.TriggerType {
-		case domainBot.TriggerExact:
-			matched = strings.EqualFold(cleanText, strings.TrimSpace(rule.TriggerValue))
-		case domainBot.TriggerContains:
-			matched = strings.Contains(lowerText, lowerTrigger)
-		case domainBot.TriggerStartsWith:
-			matched = strings.HasPrefix(lowerText, lowerTrigger)
-		case domainBot.TriggerRegex:
-			matched = safeRegexMatch(rule.TriggerValue, cleanText)
-		}
-
-		if matched {
+		if matchRuleTrigger(rule, cleanText, lowerText) {
 			return rule
 		}
 	}
@@ -882,25 +907,62 @@ Fitur: Smart Context Memory (100 Pesan) + Supermemory`
 		if cfgErr == nil && cfg != nil {
 			senderStr := evt.Info.Sender.String()
 			chatStr := chatJID.String()
+			senderPhone := normalizePhoneNumber(senderStr)
 
-			isIgnored := false
-			for _, ign := range config.BotAIIgnoreJIDs {
-				if ign != "" && (strings.EqualFold(ign, senderStr) || strings.EqualFold(ign, chatStr) || strings.Contains(senderStr, ign) || strings.Contains(chatStr, ign)) {
-					isIgnored = true
-					break
+			var matchedPersona *domainBot.AIPersona
+			if senderPhone != "" {
+				if p, pErr := s.repo.GetAIPersonaByPhone(ctx, senderPhone); pErr == nil && p != nil && p.IsActive {
+					matchedPersona = p
 				}
 			}
 
-			if !isIgnored && len(config.BotAIAllowJIDs) > 0 {
-				isAllowed := false
-				for _, allow := range config.BotAIAllowJIDs {
-					if allow != "" && (strings.EqualFold(allow, senderStr) || strings.EqualFold(allow, chatStr) || strings.Contains(senderStr, allow) || strings.Contains(chatStr, allow)) {
-						isAllowed = true
-						break
+			if isGroup && !cfg.AllowGroups {
+				return false, nil
+			}
+
+			isIgnored := false
+
+			splitTokens := func(s string) []string {
+				parts := strings.FieldsFunc(s, func(r rune) bool {
+					return r == ',' || r == '\n' || r == '\r' || r == ' ' || r == ';'
+				})
+				var res []string
+				for _, p := range parts {
+					trimmed := strings.TrimSpace(p)
+					if trimmed != "" {
+						res = append(res, trimmed)
 					}
 				}
-				if !isAllowed {
-					isIgnored = true
+				return res
+			}
+
+			matchesList := func(list []string) bool {
+				for _, item := range list {
+					if item == "" {
+						continue
+					}
+					normItem := normalizePhoneNumber(item)
+					if strings.EqualFold(item, senderStr) || strings.EqualFold(item, chatStr) || strings.Contains(senderStr, item) || strings.Contains(chatStr, item) {
+						return true
+					}
+					if normItem != "" && senderPhone != "" && (normItem == senderPhone || strings.Contains(senderPhone, normItem) || strings.Contains(normItem, senderPhone)) {
+						return true
+					}
+				}
+				return false
+			}
+
+			blockedList := append(config.BotAIIgnoreJIDs, splitTokens(cfg.BlockedJIDs)...)
+			if matchesList(blockedList) {
+				isIgnored = true
+			}
+
+			if !isIgnored && matchedPersona == nil {
+				if cfg.AccessMode == "allowlist" {
+					allowedList := append(config.BotAIAllowJIDs, splitTokens(cfg.AllowedJIDs)...)
+					if !matchesList(allowedList) {
+						isIgnored = true
+					}
 				}
 			}
 
@@ -910,6 +972,8 @@ Fitur: Smart Context Memory (100 Pesan) + Supermemory`
 				if cfg.TriggerPrefix != "" && strings.HasPrefix(text, cfg.TriggerPrefix) {
 					isAITrigger = true
 					prompt = strings.TrimSpace(strings.TrimPrefix(text, cfg.TriggerPrefix))
+				} else if matchedPersona != nil && matchedPersona.AutoReplyEnabled {
+					isAITrigger = true
 				} else if cfg.AutoReplyEnabled {
 					isAITrigger = true
 				}
