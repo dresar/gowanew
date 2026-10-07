@@ -785,6 +785,7 @@ func (s *BotService) HandleMessage(ctx context.Context, evt *events.Message, cli
 
 • *!menu* - Tampilkan daftar perintah bot ini
 • *!ping* - Tes kecepatan respon bot (latensi ms)
+• *!cuaca <kota>* - Prakiraan cuaca resmi BMKG
 • *!ai <pesan>* - Mengobrol santai dengan asisten AI pintar
 • *!quote* - Kutipan motivasi & kata bijak harian
 • *!calc <ekspresi>* - Hitung kalkulasi matematika instan
@@ -878,6 +879,29 @@ Fitur: Smart Context Memory (100 Pesan) + Supermemory`
 			if dispatchErr == nil && chatStorageRepo != nil && client != nil {
 				senderJID := whatsappInfrastructure.OwnSenderJID(client)
 				_ = chatStorageRepo.StoreSentMessageWithContext(ctx, msgID, senderJID, chatJID.String(), quoteRule.ResponseContent, time.Now(), nil)
+			}
+			return true, dispatchErr
+		}
+
+		if lowerText == "!cuaca" || lowerText == "/cuaca" || strings.HasPrefix(lowerText, "!cuaca ") || strings.HasPrefix(lowerText, "/cuaca ") {
+			query := ""
+			if len(lowerText) > 6 && strings.HasPrefix(lowerText, "!cuaca ") {
+				query = strings.TrimSpace(text[7:])
+			} else if len(lowerText) > 6 && strings.HasPrefix(lowerText, "/cuaca ") {
+				query = strings.TrimSpace(text[7:])
+			}
+			weatherReply, err := FetchBMKGWeather(ctx, query)
+			if err != nil {
+				weatherReply = "⚠️ Gagal mengambil data cuaca BMKG saat ini. Silakan coba lagi nanti."
+			}
+			weatherRule := &domainBot.Rule{
+				ResponseType:    domainBot.ResponseTypeText,
+				ResponseContent: weatherReply,
+			}
+			msgID, dispatchErr := s.DispatchResponse(ctx, client, chatJID, weatherRule)
+			if dispatchErr == nil && chatStorageRepo != nil && client != nil {
+				senderJID := whatsappInfrastructure.OwnSenderJID(client)
+				_ = chatStorageRepo.StoreSentMessageWithContext(ctx, msgID, senderJID, chatJID.String(), weatherReply, time.Now(), nil)
 			}
 			return true, dispatchErr
 		}
