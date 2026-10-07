@@ -537,16 +537,33 @@ func (h *BotHandler) ListAIPersonas(c fiber.Ctx) error {
 }
 
 func (h *BotHandler) GetAIPersona(c fiber.Ctx) error {
-	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	param := c.Params("id")
+	id, err := strconv.ParseInt(param, 10, 64)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
-			Code:    "BAD_REQUEST",
-			Message: "invalid id",
+		persona, pErr := h.botUsecase.GetAIPersonaByPhone(c.Context(), param)
+		if pErr == nil && persona != nil {
+			return c.JSON(utils.ResponseData{
+				Code:    "SUCCESS",
+				Message: "ai persona retrieved",
+				Results: persona,
+			})
+		}
+		return c.Status(fiber.StatusNotFound).JSON(utils.ResponseData{
+			Code:    "NOT_FOUND",
+			Message: "ai persona not found",
 		})
 	}
 	persona, err := h.botUsecase.GetAIPersonaByID(c.Context(), id)
 	if err != nil {
 		if err == domainBot.ErrAIPersonaNotFound {
+			personaPhone, pErr := h.botUsecase.GetAIPersonaByPhone(c.Context(), param)
+			if pErr == nil && personaPhone != nil {
+				return c.JSON(utils.ResponseData{
+					Code:    "SUCCESS",
+					Message: "ai persona retrieved",
+					Results: personaPhone,
+				})
+			}
 			return c.Status(fiber.StatusNotFound).JSON(utils.ResponseData{
 				Code:    "NOT_FOUND",
 				Message: err.Error(),
@@ -593,12 +610,17 @@ func (h *BotHandler) CreateAIPersona(c fiber.Ctx) error {
 }
 
 func (h *BotHandler) UpdateAIPersona(c fiber.Ctx) error {
-	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	param := c.Params("id")
+	id, err := strconv.ParseInt(param, 10, 64)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
-			Code:    "BAD_REQUEST",
-			Message: "invalid id",
-		})
+		p, pErr := h.botUsecase.GetAIPersonaByPhone(c.Context(), param)
+		if pErr != nil || p == nil {
+			return c.Status(fiber.StatusNotFound).JSON(utils.ResponseData{
+				Code:    "NOT_FOUND",
+				Message: "ai persona not found",
+			})
+		}
+		id = p.ID
 	}
 	var req domainBot.UpdateAIPersonaRequest
 	if err := c.Bind().Body(&req); err != nil {
@@ -628,12 +650,17 @@ func (h *BotHandler) UpdateAIPersona(c fiber.Ctx) error {
 }
 
 func (h *BotHandler) DeleteAIPersona(c fiber.Ctx) error {
-	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	param := c.Params("id")
+	id, err := strconv.ParseInt(param, 10, 64)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(utils.ResponseData{
-			Code:    "BAD_REQUEST",
-			Message: "invalid id",
-		})
+		p, pErr := h.botUsecase.GetAIPersonaByPhone(c.Context(), param)
+		if pErr != nil || p == nil {
+			return c.Status(fiber.StatusNotFound).JSON(utils.ResponseData{
+				Code:    "NOT_FOUND",
+				Message: "ai persona not found",
+			})
+		}
+		id = p.ID
 	}
 	err = h.botUsecase.DeleteAIPersona(c.Context(), id)
 	if err != nil {

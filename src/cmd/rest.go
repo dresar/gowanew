@@ -315,12 +315,22 @@ func registerUIRoute(apiGroup fiber.Router, ctx context.Context) {
 		"/account",
 		"/bot/auto-replies",
 		"/bot/ai",
+		"/bot/ai/new",
 		"/bot/menu",
 		"/bot/groups",
+		"/bot/logs",
 	}
 	for _, route := range pureUIRoutes {
 		apiGroup.Get(route, uiHandler)
 	}
+
+	apiGroup.Get("/bot/ai/:phone", func(c fiber.Ctx) error {
+		p := c.Params("phone")
+		if p == "config" || p == "chat" || p == "personas" || p == "tools" || p == "execute" {
+			return c.Next()
+		}
+		return uiHandler(c)
+	})
 
 	conditionalRoutes := []string{
 		"/chats",
