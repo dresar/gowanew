@@ -20,6 +20,7 @@ var botSchema = `{
       "enum": ["list_rules", "create_rule", "delete_rule", "toggle_rule", "query_logs"],
       "description": "Action: list_rules, create_rule, delete_rule, toggle_rule, query_logs"
     },
+    "device_id": {"type": "string", "description": "Act as this device instead of the connection default"},
     "trigger_value": {"type": "string", "description": "Keyword or regex trigger for the bot"},
     "response_content": {"type": "string", "description": "Text response sent when rule triggers"},
     "rule_id": {"type": "integer", "description": "Rule ID for delete or toggle"}

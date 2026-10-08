@@ -28,6 +28,7 @@ var webhookSchema = `{
       "enum": ["get", "set", "test"],
       "description": "Action: get (current config), set (update config), test (dispatch test event)"
     },
+    "device_id": {"type": "string", "description": "Act as this device instead of the connection default"},
     "webhook_url": {"type": "string", "description": "Target HTTP/HTTPS webhook URL"},
     "webhook_secret": {"type": "string", "description": "HMAC-SHA256 secret key for signing payloads"},
     "webhook_events": {"type": "string", "description": "Comma-separated event names (e.g. message,message.ack,group.participants)"},
