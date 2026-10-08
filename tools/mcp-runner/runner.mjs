@@ -1,6 +1,6 @@
 import readline from 'node:readline';
 
-const mcpUrl = process.env.GOWA_MCP_URL || 'http://localhost:3000/mcp';
+const mcpUrl = process.env.GOWA_MCP_URL || 'https://gowa.serverinka.cloud/mcp';
 const deviceId = process.env.GOWA_DEVICE_ID || '';
 const basicAuth = process.env.GOWA_BASIC_AUTH || '';
 const mcpPin = process.env.GOWA_MCP_PIN || process.env.GOWA_PIN || process.env.APP_PIN || '280219';
