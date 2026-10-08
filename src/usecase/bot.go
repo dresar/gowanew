@@ -1156,7 +1156,8 @@ Fitur: Smart Context Memory (100 Pesan) + Supermemory`
 			}
 
 			if !isIgnored && matchedPersona == nil {
-				if cfg.AccessMode == "allowlist" {
+				mode := strings.ToLower(strings.TrimSpace(cfg.AccessMode))
+				if mode == "allowlist" || mode == "whitelist" {
 					allowedList := append(config.BotAIAllowJIDs, splitTokens(cfg.AllowedJIDs)...)
 					if !matchesList(allowedList) {
 						isIgnored = true

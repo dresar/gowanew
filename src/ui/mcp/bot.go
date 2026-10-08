@@ -17,13 +17,20 @@ var botSchema = `{
   "properties": {
     "action": {
       "type": "string",
-      "enum": ["list_rules", "create_rule", "delete_rule", "toggle_rule", "query_logs"],
-      "description": "Action: list_rules, create_rule, delete_rule, toggle_rule, query_logs"
+      "enum": ["list_rules", "create_rule", "delete_rule", "toggle_rule", "query_logs", "get_ai_config", "update_ai_config", "list_personas"],
+      "description": "Action: list_rules, create_rule, delete_rule, toggle_rule, query_logs, get_ai_config, update_ai_config, list_personas"
     },
     "device_id": {"type": "string", "description": "Act as this device instead of the connection default"},
     "trigger_value": {"type": "string", "description": "Keyword or regex trigger for the bot"},
     "response_content": {"type": "string", "description": "Text response sent when rule triggers"},
-    "rule_id": {"type": "integer", "description": "Rule ID for delete or toggle"}
+    "rule_id": {"type": "integer", "description": "Rule ID for delete or toggle"},
+    "limit": {"type": "integer", "description": "Max rows for query_logs"},
+    "access_mode": {"type": "string", "enum": ["all", "allowlist", "blocklist"], "description": "action=update_ai_config: access mode policy"},
+    "allowed_jids": {"type": "string", "description": "action=update_ai_config: comma-separated phone numbers/JIDs permitted to use AI"},
+    "blocked_jids": {"type": "string", "description": "action=update_ai_config: comma-separated phone numbers/JIDs blocked from using AI"},
+    "allow_groups": {"type": "boolean", "description": "action=update_ai_config: whether AI can respond in groups"},
+    "auto_reply_enabled": {"type": "boolean", "description": "action=update_ai_config: master toggle for auto-reply without prefix"},
+    "trigger_prefix": {"type": "string", "description": "action=update_ai_config: prefix required to trigger AI (e.g. !ai)"}
   }
 }`
 
@@ -125,6 +132,80 @@ func (h *BotHandler) handleBot(ctx context.Context, request mcpg.CallToolRequest
 		}
 		res := map[string]any{"total": total, "logs": logs}
 		return mcpg.NewToolResultStructured(res, fmt.Sprintf("retrieved %d logs (total %d)", len(logs), total)), nil
+
+	case "get_ai_config":
+		cfg, err := h.botService.GetAIConfig(ctx)
+		if err != nil {
+			return mcpg.NewToolResultError(err.Error()), nil
+		}
+		return mcpg.NewToolResultStructured(cfg, "retrieved ai config"), nil
+
+	case "update_ai_config":
+		args := request.GetArguments()
+		var req domainBot.UpdateAIConfigRequest
+		if args != nil {
+			if _, ok := args["provider"]; ok {
+				v := request.GetString("provider", "")
+				req.Provider = &v
+			}
+			if _, ok := args["base_url"]; ok {
+				v := request.GetString("base_url", "")
+				req.BaseURL = &v
+			}
+			if _, ok := args["api_key"]; ok {
+				v := request.GetString("api_key", "")
+				req.APIKey = &v
+			}
+			if _, ok := args["model"]; ok {
+				v := request.GetString("model", "")
+				req.Model = &v
+			}
+			if _, ok := args["system_prompt"]; ok {
+				v := request.GetString("system_prompt", "")
+				req.SystemPrompt = &v
+			}
+			if rawTemp, ok := args["temperature"]; ok {
+				if t, ok := rawTemp.(float64); ok {
+					req.Temperature = &t
+				}
+			}
+			if _, ok := args["trigger_prefix"]; ok {
+				v := request.GetString("trigger_prefix", "")
+				req.TriggerPrefix = &v
+			}
+			if _, ok := args["auto_reply_enabled"]; ok {
+				v := request.GetBool("auto_reply_enabled", false)
+				req.AutoReplyEnabled = &v
+			}
+			if _, ok := args["access_mode"]; ok {
+				v := request.GetString("access_mode", "")
+				req.AccessMode = &v
+			}
+			if _, ok := args["allowed_jids"]; ok {
+				v := request.GetString("allowed_jids", "")
+				req.AllowedJIDs = &v
+			}
+			if _, ok := args["blocked_jids"]; ok {
+				v := request.GetString("blocked_jids", "")
+				req.BlockedJIDs = &v
+			}
+			if _, ok := args["allow_groups"]; ok {
+				v := request.GetBool("allow_groups", false)
+				req.AllowGroups = &v
+			}
+		}
+		cfg, err := h.botService.UpdateAIConfig(ctx, req)
+		if err != nil {
+			return mcpg.NewToolResultError(err.Error()), nil
+		}
+		return mcpg.NewToolResultStructured(cfg, "updated ai config"), nil
+
+	case "list_personas":
+		personas, err := h.botService.ListAIPersonas(ctx)
+		if err != nil {
+			return mcpg.NewToolResultError(err.Error()), nil
+		}
+		return mcpg.NewToolResultStructured(personas, fmt.Sprintf("retrieved %d personas", len(personas))), nil
 
 	default:
 		return mcpg.NewToolResultError(fmt.Sprintf("unknown action: %s", action)), nil
